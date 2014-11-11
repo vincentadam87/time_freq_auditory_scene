@@ -69,11 +69,10 @@ class Scene(Node):
     """
 
     def __init__(self, List=[]):
-        super(Node, self).__init__()
+
+        super(Scene, self).__init__()
+        self.List = []
         self.TAG = "Scene"
-        self.List = List
-        self.delay = 0.
-        self.scale = 1.
 
 
     def draw_spectrogram(self, f_axis="log"):
@@ -210,6 +209,51 @@ class Sweep(Leaf):
                 alpha=map_abs_amp,
                 color='black')
 
+
+class InstantaneousFrequency(Leaf):
+    """
+    Sound cos(f(t))
+    f is the instantaneous frequency
+    """
+
+    TAG = "InstantaneousFrequency"
+
+    def __init__(self, f=None, delay=0., duration=1.,  amp=1.):
+
+        super(InstantaneousFrequency, self).__init__(delay=delay, duration=duration)
+        self.f = f
+        self.amp = amp
+
+    def generate(self, fs):
+        n = int(self.duration*fs)
+        t = np.linspace(0., self.duration, n )  # time support
+        ft = self.f(t)  # the time instantaneous frequency
+        y = np.cos(2.*np.pi*ft)
+
+        print len(t),len(ft), len(y)
+        # apply border smoothing in the form of a raising squared cosine amplitude modulation
+        tau = 0.02  # 10ms
+        Ltau = int(tau*fs)
+        up = 1.-np.cos(np.linspace(0, np.pi/2., Ltau))**2
+        down = np.cos(np.linspace(0, np.pi/2., Ltau))**2
+        y[0:Ltau] *= up
+        y[-Ltau:] *= down
+        return y #*self.amp
+
+    def getduration(self):
+        return self.duration
+
+    def print_content(self):
+        print self.TAG+\
+              ", f:"+str(self.f)+\
+              ", amp:"+str(self.amp)+\
+              ", duration:"+str(self.duration)+\
+              ", delay:"+str(self.delay)
+
+    def draw(self, ax, prop_delay, prop_scale):
+        pass
+
+
 class ShepardTone(Node):
     """
     Shepard Tone
@@ -235,6 +279,102 @@ class ShepardTone(Node):
             fi = 2**i*self.fb
             tone = Tone(freq=fi, delay=0., duration=duration,  amp=env.amp(fi))
             self.List.append(tone)
+
+class Chord(Node):
+    """
+    Chord of pure tones
+    """
+
+    def __init__(self, duration=1., delay=0., amps=None, **kwargs):
+    #freqs=[], amps=[] List=[]):
+        """
+        Chord of pure tone constructor
+        # Multiple ways of constructing the chord
+        # - from pairs of (frequency, amplitude)
+        # - from a base freq and intervals
+        """
+
+        super(Chord, self).__init__(delay=delay)
+        self.List = []
+        self.duration = duration
+        self.TAG = "Chord"
+
+        # constructing from preexisting tone
+        if 'chord' in kwargs:
+            self.freqs = kwargs['chord'].freqs
+            self.amps = kwargs['chord'].amps
+            self.List = kwargs['chord'].List
+            self.duration = kwargs['chord'].duration
+
+        else:
+            # constructing from pairs
+            if 'freqs' in kwargs:
+                self.freqs = kwargs['freqs']
+            # constructing from base and intervals
+            elif 'fb' in kwargs:
+                assert 'intervals' in kwargs
+                self.freqs = kwargs['fb']*np.cumprod(kwargs['intervals'])
+
+            self.amps = np.ones(self.freqs.shape) if amps == None else amps
+
+            assert len(self.freqs) == len(self.amps)
+            self.build_tones()
+
+    def build_tones(self):
+        self.List=[]
+        n_chord = len(self.freqs)
+        for i in range(n_chord):
+            tone = Tone(freq=self.freqs[i],
+                        delay=0.,
+                        duration=self.duration,
+                        amp=self.amps[i])
+            self.List.append(tone)
+
+    def shift_tones(self, shift=1.):
+        """
+        Shift all tones,
+        either by a common shift if argument is scalar
+        or by individual shifts
+        """
+        if isinstance(shift, list):
+            assert len(shift) == len(self.freqs)
+        self.freqs = (np.asarray(self.freqs)*np.asarray(shift)).tolist()
+        self.build_tones()
+
+
+
+class ShepardRisset(Node):
+    """
+    Shepard Tone
+    """
+
+    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], k=1.1):
+        """
+        Shepard Tone constructor
+        :param fb: base frequency
+        :param duration: duration
+        :param env: function (log f -> amplitude)
+        """
+        super(ShepardRisset, self).__init__(delay=delay, List=List)
+        self.TAG = "ShepardTone"
+        self.fb = fb
+        self.k =k
+
+        fmin = 5.
+        fmax = 20000.
+        imin = int(1./np.log(2)*np.log(fmin/fb))
+        imax = int(1./np.log(2)*np.log(fmax/fb))
+        index = np.arange(imin, imax)
+        self.List = []
+
+        def inst_f(fi):
+            return lambda x: fi*(x**k)
+
+        for i in index:
+            print i
+            fi = 2.**i*self.fb
+            instFreq = InstantaneousFrequency(f=inst_f(fi), duration=duration,  amp=env.amp(fi))
+            self.List.append(instFreq)
 
 
 class SpectralEnvelope(object):
@@ -315,7 +455,6 @@ if __name__ == "__main__":
     k = 2.**(2./12.)
     # declare gaussian envelope on log frequency
     genv = GaussianSpectralEnvelope(mu_log=5., sigma_log=2.)
-
     # Constructing the scene
     for i in range(20):
         tmp_st = ShepardTone(fb=10.*(k)**i, env=genv, delay=duration*i, duration=duration)
@@ -323,28 +462,48 @@ if __name__ == "__main__":
     scene.List = stList
 
     # generate sound
-    x = scene.generate(fs=44100.)
-    playsound(x, fs=44100. )
+    #x = scene.generate(fs=44100.)
+    #playsound(x, fs=44100. )
 
     # draw spectrogram
-    fig = scene.draw_spectrogram()
-    plt.show()
+    #fig = scene.draw_spectrogram()
+    #plt.show()
 
     #------------------------------------------------
 
-    scene2 = Scene()
-    factor = 2.**(2./12.)
-    duration = 0.2
-    dt = duration/4.
-    for i in range(20):
-        start = np.random.rand()
-        f_start = 200.+500.*np.random.rand()
-        t_start = np.random.rand()*4.
-        sweep = Sweep(freqs=[f_start, f_start*factor], delay=dt*i, duration=duration)
-        scene2.List.append(sweep)
+    #scene2 = Scene()
+    #factor = 2.**(2./12.)
+    #duration = 0.2
+    #dt = duration/4.
+    #for i in range(20):
+    #    start = np.random.rand()
+    #    f_start = 200.+500.*np.random.rand()
+    #    t_start = np.random.rand()*4.
+    #    sweep = Sweep(freqs=[f_start, f_start*factor], delay=dt*i, duration=duration)
+    #    scene2.List.append(sweep)
 
 
-    x2 = scene2.generate(fs=44100.)
-    playsound(x2)
-    fig2 = scene2.draw_spectrogram()
-    plt.show()
+    #x2 = scene2.generate(fs=44100.)
+    #playsound(x2)
+    #fig2 = scene2.draw_spectrogram()
+    #plt.show()
+
+    #------------------------------------------------
+
+    scene3 = Scene()
+    duration = 0.3
+    fc = 300.
+    fmod = 100.
+    amod = 1.
+    #f = lambda x: fc+amod*np.cos(2*np.pi*fmod*x)
+    f = lambda x: 0*x+fc
+
+    vibrato = InstantaneousFrequency(f=f, duration=duration)
+    tone = Tone(freq=fc,  duration=duration)
+    scene3.List.append(vibrato)
+    x3 = scene3.generate(fs=44100.)
+    playsound(x3)
+
+
+    #fig3 = scene3.draw_spectrogram()
+    #plt.show()
