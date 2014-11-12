@@ -13,6 +13,7 @@ from scipy.io.wavfile import write
 from sound4python import sound4python as S4P
 import os
 from matplotlib import pyplot as plt
+import copy
 
 class Node(object):
     """
@@ -88,8 +89,6 @@ class Scene(Node):
         ax.set_xlabel("time (s)")
         ax.set_title("Spectrogram")
         return fig
-
-
 
 class Leaf(object):
     """
@@ -209,7 +208,6 @@ class Sweep(Leaf):
                 alpha=map_abs_amp,
                 color='black')
 
-
 class InstantaneousFrequency(Leaf):
     """
     Sound cos(f(t))
@@ -221,7 +219,7 @@ class InstantaneousFrequency(Leaf):
     def __init__(self, f=None, delay=0., duration=1.,  amp=1.):
 
         super(InstantaneousFrequency, self).__init__(delay=delay, duration=duration)
-        self.f = f
+        self.f = copy.deepcopy(f)
         self.amp = amp
 
     def generate(self, fs):
@@ -230,7 +228,6 @@ class InstantaneousFrequency(Leaf):
         ft = self.f(t)  # the time instantaneous frequency
         y = np.cos(2.*np.pi*ft)
 
-        print len(t),len(ft), len(y)
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
         tau = 0.02  # 10ms
         Ltau = int(tau*fs)
@@ -251,46 +248,66 @@ class InstantaneousFrequency(Leaf):
               ", delay:"+str(self.delay)
 
     def draw(self, ax, prop_delay, prop_scale):
+        fs_plot = 2000.
+        n = int(self.duration*fs_plot)
+        t = np.linspace(0., self.duration, n )  # time support
+        ft = self.f(t)  # the time instantaneous frequency
+        dftdt = np.diff(ft)*fs_plot
+        abs_amp = self.amp*prop_scale
+        map_abs_amp = sig((abs_amp-0.2))
+        ax.plot(t[:-1],dftdt,
+                color='black')
+
+class SpectralEnvelope(object):
+    """
+    Abstract Spectral envelope
+    """
+
+    def __init__(self, env):
+        self.env = env
+
+    @abstractmethod
+    def amp(self, x):
+        raise NotImplementedError()
+
+class GaussianSpectralEnvelope(SpectralEnvelope):
+    """
+    Gaussian Spectral envelope
+    """
+    mu_log = None
+    sigma_log = None
+
+    def __init__(self, mu_log=2., sigma_log=1.):
+        self.mu_log = mu_log
+        self.sigma_log = sigma_log
+
+    def amp(self, x):
+        return g_env(x, self.mu_log, self.sigma_log)
+
+class UnitSpectralEnvelope(SpectralEnvelope):
+    """
+    Unit Spectral envelope
+    """
+    def __init__(self):
         pass
+    def amp(self, x):
+        # returns 1
+        return np.ones(np.array(x).shape)
 
-
-class ShepardTone(Node):
-    """
-    Shepard Tone
-    """
-
-    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[]):
-        """
-        Shepard Tone constructor
-        :param fb: base frequency
-        :param duration: duration
-        :param env: function (log f -> amplitude)
-        """
-        super(ShepardTone, self).__init__(delay=delay, List=List)
-        self.TAG = "ShepardTone"
-        self.fb = fb
-        fmin = 10.
-        fmax = 20000.
-        imin = int(1./np.log(2)*np.log(fmin/fb))
-        imax = int(1./np.log(2)*np.log(fmax/fb))
-        index = np.arange(imin, imax)
-        self.List = []
-        for i in index:
-            fi = 2**i*self.fb
-            tone = Tone(freq=fi, delay=0., duration=duration,  amp=env.amp(fi))
-            self.List.append(tone)
 
 class Chord(Node):
     """
-    Chord of pure tones
+    Static Chord of pure tones
     """
 
-    def __init__(self, duration=1., delay=0., amps=None, **kwargs):
+    def __init__(self, duration=1., delay=0., amps=None, env=None, **kwargs):
     #freqs=[], amps=[] List=[]):
         """
-        Chord of pure tone constructor
+        Chord of pure tones constructor
         # Multiple ways of constructing the chord
-        # - from pairs of (frequency, amplitude)
+        # - from frequencies
+        # -- and amplitude
+        # -- and spectral envelope
         # - from a base freq and intervals
         """
 
@@ -298,6 +315,7 @@ class Chord(Node):
         self.List = []
         self.duration = duration
         self.TAG = "Chord"
+        self.env = None
 
         # constructing from preexisting tone
         if 'chord' in kwargs:
@@ -305,17 +323,34 @@ class Chord(Node):
             self.amps = kwargs['chord'].amps
             self.List = kwargs['chord'].List
             self.duration = kwargs['chord'].duration
+            self.env = kwargs['chord'].env
 
         else:
-            # constructing from pairs
+            # Constructing frequencies
+            # - constructing from pairs
             if 'freqs' in kwargs:
                 self.freqs = kwargs['freqs']
-            # constructing from base and intervals
+            # - constructing from base and intervals
             elif 'fb' in kwargs:
                 assert 'intervals' in kwargs
                 self.freqs = kwargs['fb']*np.cumprod(kwargs['intervals'])
 
-            self.amps = np.ones(self.freqs.shape) if amps == None else amps
+
+            # Constructing amplitudes
+
+            # - from input
+            if amps != None:
+                self.amps = kwargs['amps']
+            # - from enveloppe
+            else:
+                if env != None:
+                    self.env = env
+                else:
+                    self.env = UnitSpectralEnvelope()
+
+                self.amps = self.env.amp(self.freqs)
+
+
 
             assert len(self.freqs) == len(self.amps)
             self.build_tones()
@@ -339,13 +374,49 @@ class Chord(Node):
         if isinstance(shift, list):
             assert len(shift) == len(self.freqs)
         self.freqs = (np.asarray(self.freqs)*np.asarray(shift)).tolist()
+        self.amps = self.env.amp(self.freqs) # won't work if no enveloppe
         self.build_tones()
 
+
+class ShepardTone(Chord):
+    """
+    Shepard Tone
+    """
+
+    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[]):
+        """
+        Shepard Tone constructor
+        :param fb: base frequency
+        :param duration: duration
+        :param env: function (log f -> amplitude)
+        """
+        self.TAG = "ShepardTone"
+        self.fb = fb
+
+        fmin = 10.
+        fmax = 20000.
+        imin = int(1./np.log(2)*np.log(fmin/fb))
+        imax = int(1./np.log(2)*np.log(fmax/fb))
+        index = np.arange(imin, imax)
+        self.List = []
+        self.freqs = []
+        self.amps = []
+        for i in index:
+            fi = 2**i*self.fb
+            #tone = Tone(freq=fi, delay=0., duration=duration,  amp=env.amp(fi))
+            #self.List.append(tone)
+            self.freqs.append(fi)
+            self.amps.append(env.amp(fi))
+
+        super(ShepardTone, self).__init__(delay=delay,
+                                          duration=duration,
+                                          List=List,
+                                          env=env)
 
 
 class ShepardRisset(Node):
     """
-    Shepard Tone
+    ShepardRisset Tone
     """
 
     def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], k=1.1):
@@ -368,40 +439,14 @@ class ShepardRisset(Node):
         self.List = []
 
         def inst_f(fi):
-            return lambda x: fi*(x**k)
+            return lambda x: fi*np.exp(x*k)
 
         for i in index:
-            print i
             fi = 2.**i*self.fb
             instFreq = InstantaneousFrequency(f=inst_f(fi), duration=duration,  amp=env.amp(fi))
             self.List.append(instFreq)
 
 
-class SpectralEnvelope(object):
-    """
-    Abstract Spectral envelope
-    """
-
-    def __init__(self, env):
-        self.env = env
-
-    @abstractmethod
-    def amp(self,x):
-        raise NotImplementedError()
-
-class GaussianSpectralEnvelope(SpectralEnvelope):
-    """
-    Gaussian Spectral envelope
-    """
-    mu_log = None
-    sigma_log = None
-
-    def __init__(self, mu_log=2., sigma_log=1.):
-        self.mu_log = mu_log
-        self.sigma_log = sigma_log
-
-    def amp(self, x):
-        return g_env(x, self.mu_log, self.sigma_log)
 
 
 # ----------------------
@@ -415,7 +460,6 @@ def g_env(x, mu, sigma):
     :return:
     """
     return np.exp(-(np.log(x)-mu)**2/sigma**2)
-
 
 def playsound(x, fs=44100.):
     """
@@ -441,7 +485,6 @@ def sig(x):
     return 1./(1+np.exp(-x))
 
 # ----------------------
-
 
 if __name__ == "__main__":
     print "starting!"
