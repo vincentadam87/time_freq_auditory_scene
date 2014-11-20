@@ -14,22 +14,21 @@ from sound4python import sound4python as S4P
 import os
 from matplotlib import pyplot as plt
 import copy
+import collections
 
 class Node(object):
     """
     Node
-    - scale and delay are applied to children
     """
     TAG = "Node"
-    List = None
-    delay = None
-    scale = None
+    List = None  # list of nodes of leaves
+    delay = None  # delay of node with respect to parent node
+    scale = None  # amplitude scaling applied to all children of node
 
     def __init__(self, List=[], delay=0., scale=1.):
         self.List = List
         self.delay = delay
         self.scale = scale
-
 
     def getduration(self):
         return np.max([item.delay+item.getduration() for item in self.List])
@@ -39,6 +38,11 @@ class Node(object):
             self.List = self.List + item
         else:
             self.List.append(item)
+
+    def flatten(self, cum_delay, prod_scale):
+        l = []
+        for item in self.List:
+            l += item.flatten(cum_delay, prod_scale)
 
     def print_content(self):
         for item in self.List:
@@ -62,6 +66,7 @@ class Node(object):
         """
         for node in self.List:
             node.draw(ax, prop_delay+self.delay, prop_scale*self.scale)
+
 
 class Scene(Node):
     """
@@ -89,6 +94,14 @@ class Scene(Node):
         ax.set_xlabel("time (s)")
         ax.set_title("Spectrogram")
         return fig
+
+    def flatten_scene(self):
+        """
+        Clear all hierachy in tone
+        """
+        self.List = [item for item in flatten(self.List)]
+
+
 
 class Leaf(object):
     """
@@ -216,21 +229,29 @@ class InstantaneousFrequency(Leaf):
 
     TAG = "InstantaneousFrequency"
 
-    def __init__(self, f=None, delay=0., duration=1.,  env=None):
+    def __init__(self, phase=None, i_freq=None, delay=0., duration=1.,  env=None):
 
         super(InstantaneousFrequency, self).__init__(delay=delay, duration=duration)
-        self.f = copy.deepcopy(f)
+        self.phase = copy.deepcopy(phase)
+        self.i_freq = copy.deepcopy(i_freq)
         self.env = env
+
+
 
     def generate(self, fs):
         n = int(self.duration*fs)
         t = np.linspace(0., self.duration, n )  # time support
-        ft = self.f(t)  # the time instantaneous phase
-        dft = np.diff(ft)  # the instantaneous frequency
-        ampt = self.env.amp(dft*fs)  # the instantaneous amplitude
-        # croping a time step
-        ft = ft[:-1]
-        y = np.cos(2.*np.pi*ft)*ampt
+        if self.phase is not None:
+            phase = self.phase(t)  # the time instantaneous phase
+            ift = np.diff(phase)  # the instantaneous frequency
+            phase = phase[:-1]
+        elif self.i_freq is not None:
+            ift = self.i_freq(t)/fs
+            phase = np.cumsum(ift)
+
+
+        ampt = self.env.amp(ift*fs)  # the instantaneous amplitude
+        y = np.cos(2.*np.pi*phase)*ampt
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
         tau = 0.02  # 10ms
         Ltau = int(tau*fs)
@@ -245,7 +266,7 @@ class InstantaneousFrequency(Leaf):
 
     def print_content(self):
         print self.TAG+\
-              ", f:"+str(self.f)+\
+              ", f:"+str(self.f_phase)+\
               ", amp:"+str(self.amp)+\
               ", duration:"+str(self.duration)+\
               ", delay:"+str(self.delay)
@@ -254,9 +275,14 @@ class InstantaneousFrequency(Leaf):
         fs_plot = 2000.
         n = int(self.duration*fs_plot)
         t = np.linspace(0., self.duration, n )  # time support
-        ft = self.f(t)  # the time instantaneous frequency
-        dftdt = np.diff(ft)*fs_plot
-        ax.plot(prop_delay+self.delay+t[:-1],dftdt,
+        if self.phase is not None:
+            phase = self.phase(t)  # the time instantaneous phase
+            ift = np.diff(phase)*fs_plot  # the instantaneous frequency
+        elif self.i_freq is not None:
+            ift = self.i_freq(t)
+            ift = ift[:-1]
+
+        ax.plot(prop_delay+self.delay+t[:-1],ift,
                 color='black')
 
 class SpectralEnvelope(object):
@@ -441,7 +467,7 @@ class ShepardRisset(Node):
 
 
         # fixed form of temporal evolution to have constant speed over the circle
-        def inst_f(fi):
+        def phase(fi):
             return lambda x: fi*np.exp(x*k)/k
 
         i_restart = -1 if k < 0 else 0
@@ -451,7 +477,7 @@ class ShepardRisset(Node):
         for i in index:
             fi = 2.**i*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
-            instFreq = InstantaneousFrequency(f=inst_f(fi), duration=min(duration_tone,duration), env=env)
+            instFreq = InstantaneousFrequency(phase=phase(fi), duration=min(duration_tone,duration), env=env)
             self.List.append(instFreq)
 
         # added tones appearing as times goes on
@@ -462,7 +488,7 @@ class ShepardRisset(Node):
         for time in times:
             fi = 2.**index[i_restart]*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
-            instFreq = InstantaneousFrequency(f=inst_f(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
+            instFreq = InstantaneousFrequency(phase=phase(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
             self.List.append(instFreq)
 
 
@@ -503,6 +529,14 @@ def sig(x):
     :return:
     """
     return 1./(1+np.exp(-x))
+
+def flatten(l):
+    for el in l:
+        if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
+            for sub in flatten(el):
+                yield sub
+        else:
+            yield el
 
 # ----------------------
 
