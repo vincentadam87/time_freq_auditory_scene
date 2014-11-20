@@ -216,18 +216,21 @@ class InstantaneousFrequency(Leaf):
 
     TAG = "InstantaneousFrequency"
 
-    def __init__(self, f=None, delay=0., duration=1.,  amp=1.):
+    def __init__(self, f=None, delay=0., duration=1.,  env=None):
 
         super(InstantaneousFrequency, self).__init__(delay=delay, duration=duration)
         self.f = copy.deepcopy(f)
-        self.amp = amp
+        self.env = env
 
     def generate(self, fs):
         n = int(self.duration*fs)
         t = np.linspace(0., self.duration, n )  # time support
-        ft = self.f(t)  # the time instantaneous frequency
-        y = np.cos(2.*np.pi*ft)
-
+        ft = self.f(t)  # the time instantaneous phase
+        dft = np.diff(ft)  # the instantaneous frequency
+        ampt = self.env.amp(dft*fs)  # the instantaneous amplitude
+        # croping a time step
+        ft = ft[:-1]
+        y = np.cos(2.*np.pi*ft)*ampt
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
         tau = 0.02  # 10ms
         Ltau = int(tau*fs)
@@ -235,7 +238,7 @@ class InstantaneousFrequency(Leaf):
         down = np.cos(np.linspace(0, np.pi/2., Ltau))**2
         y[0:Ltau] *= up
         y[-Ltau:] *= down
-        return y #*self.amp
+        return y  #*self.amp
 
     def getduration(self):
         return self.duration
@@ -253,9 +256,7 @@ class InstantaneousFrequency(Leaf):
         t = np.linspace(0., self.duration, n )  # time support
         ft = self.f(t)  # the time instantaneous frequency
         dftdt = np.diff(ft)*fs_plot
-        abs_amp = self.amp*prop_scale
-        map_abs_amp = sig((abs_amp-0.2))
-        ax.plot(t[:-1],dftdt,
+        ax.plot(prop_delay+self.delay+t[:-1],dftdt,
                 color='black')
 
 class SpectralEnvelope(object):
@@ -393,8 +394,8 @@ class ShepardTone(Chord):
         self.TAG = "ShepardTone"
         self.fb = fb
 
-        fmin = 10.
-        fmax = 20000.
+        fmin = 5.
+        fmax = 40000.
         imin = int(1./np.log(2)*np.log(fmin/fb))
         imax = int(1./np.log(2)*np.log(fmax/fb))
         index = np.arange(imin, imax)
@@ -432,19 +433,38 @@ class ShepardRisset(Node):
         self.k =k
 
         fmin = 5.
-        fmax = 20000.
+        fmax = 40000.
         imin = int(1./np.log(2)*np.log(fmin/fb))
         imax = int(1./np.log(2)*np.log(fmax/fb))
         index = np.arange(imin, imax)
         self.List = []
 
-        def inst_f(fi):
-            return lambda x: fi*np.exp(x*k)
 
+        # fixed form of temporal evolution to have constant speed over the circle
+        def inst_f(fi):
+            return lambda x: fi*np.exp(x*k)/k
+
+        i_restart = -1 if k < 0 else 0
+        f_thresh = fmin if k < 0 else fmax
+
+        # initial tones have duration set corresponding to when they cross fmax
         for i in index:
             fi = 2.**i*self.fb
-            instFreq = InstantaneousFrequency(f=inst_f(fi), duration=duration,  amp=env.amp(fi))
+            duration_tone = np.abs(1./k*np.log(f_thresh/fi))
+            instFreq = InstantaneousFrequency(f=inst_f(fi), duration=min(duration_tone,duration), env=env)
             self.List.append(instFreq)
+
+        # added tones appearing as times goes on
+        dt = np.abs(1./k*np.log(2.))
+        times = np.arange(dt,duration,dt)
+        print dt, duration, times, index
+
+        for time in times:
+            fi = 2.**index[i_restart]*self.fb
+            duration_tone = np.abs(1./k*np.log(f_thresh/fi))
+            instFreq = InstantaneousFrequency(f=inst_f(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
+            self.List.append(instFreq)
+
 
 
 
