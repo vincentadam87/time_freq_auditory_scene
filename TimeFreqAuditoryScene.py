@@ -321,7 +321,6 @@ class UnitSpectralEnvelope(SpectralEnvelope):
         # returns 1
         return np.ones(np.array(x).shape)
 
-
 class Chord(Node):
     """
     Static Chord of pure tones
@@ -405,40 +404,62 @@ class Chord(Node):
         self.build_tones()
 
 
-class ShepardTone(Chord):
+class ConstantIntervalChord(Chord):
     """
     Shepard Tone
     """
 
-    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[]):
+    def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
+        """
+        ConstantIntervalChord  constructor
+        :param fb: base frequency
+        :param duration: duration
+        :param env: function (log f -> amplitude)
+        """
+        self.fb = fb
+        self.fmin = fmin
+        self.fmax = fmax
+        imin = int(1./np.log(interval)*np.log(fmin/fb))
+        imax = int(1./np.log(interval)*np.log(fmax/fb))
+        index = np.arange(imin, imax)
+        self.List = []
+        self.freqs = []
+        self.amps = []
+        for i in index:
+            fi = interval**i*self.fb
+            self.freqs.append(fi)
+            self.amps.append(env.amp(fi))
+
+        super(ConstantIntervalChord, self).__init__(delay=delay,
+                                          duration=duration,
+                                          List=List,
+                                          env=env)
+        self.TAG = "ConstantIntervalChord"
+
+
+class ShepardTone(ConstantIntervalChord):
+    """
+    Shepard Tone
+    """
+
+    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
         """
         Shepard Tone constructor
         :param fb: base frequency
         :param duration: duration
         :param env: function (log f -> amplitude)
         """
-        self.TAG = "ShepardTone"
-        self.fb = fb
 
-        fmin = 5.
-        fmax = 40000.
-        imin = int(1./np.log(2)*np.log(fmin/fb))
-        imax = int(1./np.log(2)*np.log(fmax/fb))
-        index = np.arange(imin, imax)
-        self.List = []
-        self.freqs = []
-        self.amps = []
-        for i in index:
-            fi = 2**i*self.fb
-            #tone = Tone(freq=fi, delay=0., duration=duration,  amp=env.amp(fi))
-            #self.List.append(tone)
-            self.freqs.append(fi)
-            self.amps.append(env.amp(fi))
-
-        super(ShepardTone, self).__init__(delay=delay,
+        super(ShepardTone, self).__init__(fb=fb,
+                                          interval=2.,
+                                          delay=delay,
                                           duration=duration,
                                           List=List,
-                                          env=env)
+                                          env=env,
+                                          fmin=fmin,
+                                          fmax=fmax)
+        self.TAG = "ShepardTone"
+
 
 
 class ShepardRisset(Node):
