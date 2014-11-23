@@ -406,7 +406,7 @@ class Chord(Node):
 
 class ConstantIntervalChord(Chord):
     """
-    Shepard Tone
+    ConstantIntervalChord
     """
 
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
@@ -460,6 +460,23 @@ class ShepardTone(ConstantIntervalChord):
                                           fmax=fmax)
         self.TAG = "ShepardTone"
 
+class Tritone(Node):
+    """
+    TriTone (octave interval)
+    """
+
+    def __init__(self, fb=50., duration_sp=1., interval_sp=0., delay=0., env=None, fmin=5, fmax=40000):
+        """
+        TriTone constructor
+        :param fb: base frequency of first tone
+        :param duration_sp: duration of shepard tones in tritone
+        :param interval_sp: interval between shepard tones in tritone
+        """
+        super(Tritone, self).__init__(delay=delay)
+        T1 = ShepardTone(fb=fb, duration=duration_sp, delay=0., env=env, fmin=fmin, fmax=fmax)
+        T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+interval_sp, env=env, fmin=fmin, fmax=fmax)
+        self.List = [T1, T2]
+        self.TAG = "Tritone"
 
 
 class ShepardRisset(Node):
