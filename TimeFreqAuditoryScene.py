@@ -10,7 +10,6 @@ This is useful:
 import numpy as np
 from abc import *
 from scipy.io.wavfile import write
-from sound4python import sound4python as S4P
 import os
 from matplotlib import pyplot as plt
 import copy
@@ -160,11 +159,11 @@ class Tone(Leaf):
         return self.duration
 
     def print_content(self):
-        print self.TAG+\
+        print(self.TAG+\
               ", freq:"+str(self.freq)+\
               ", amp:"+str(self.amp)+\
               ", duration:"+str(self.duration)+\
-              ", delay:"+str(self.delay)
+              ", delay:"+str(self.delay))
 
     def draw(self, ax, prop_delay, prop_scale):
         abs_amp = self.amp*prop_scale
@@ -206,11 +205,11 @@ class Sweep(Leaf):
         return self.duration
 
     def print_content(self):
-        print self.TAG+\
+        print(self.TAG+\
               ", freqs:"+str(self.freqs)+\
               ", amp:"+str(self.amp)+\
               ", duration:"+str(self.duration)+\
-              ", delay:"+str(self.delay)
+              ", delay:"+str(self.delay))
 
     def draw(self, ax, prop_delay, prop_scale):
         abs_amp = self.amp*prop_scale
@@ -265,11 +264,11 @@ class InstantaneousFrequency(Leaf):
         return self.duration
 
     def print_content(self):
-        print self.TAG+\
+        print(self.TAG+\
               ", f:"+str(self.f_phase)+\
               ", amp:"+str(self.amp)+\
               ", duration:"+str(self.duration)+\
-              ", delay:"+str(self.delay)
+              ", delay:"+str(self.delay))
 
     def draw(self, ax, prop_delay, prop_scale):
         fs_plot = 2000.
@@ -465,7 +464,7 @@ class Tritone(Node):
     TriTone (octave interval)
     """
 
-    def __init__(self, fb=50., duration_sp=1., interval_sp=0., delay=0., env=None, fmin=5, fmax=40000):
+    def __init__(self, fb=50., duration_sp=1., delay_sp=0., delay=0., env=None, fmin=5, fmax=40000):
         """
         TriTone constructor
         :param fb: base frequency of first tone
@@ -474,7 +473,7 @@ class Tritone(Node):
         """
         super(Tritone, self).__init__(delay=delay)
         T1 = ShepardTone(fb=fb, duration=duration_sp, delay=0., env=env, fmin=fmin, fmax=fmax)
-        T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+interval_sp, env=env, fmin=fmin, fmax=fmax)
+        T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+delay_sp, env=env, fmin=fmin, fmax=fmax)
         self.List = [T1, T2]
         self.TAG = "Tritone"
 
@@ -521,7 +520,6 @@ class ShepardRisset(Node):
         # added tones appearing as times goes on
         dt = np.abs(1./k*np.log(2.))
         times = np.arange(dt,duration,dt)
-        print dt, duration, times, index
 
         for time in times:
             fi = 2.**index[i_restart]*self.fb
@@ -545,20 +543,20 @@ def g_env(x, mu, sigma):
     """
     return np.exp(-(np.log(x)-mu)**2/sigma**2)
 
-def playsound(x, fs=44100.):
-    """
-    Playing sound x
-    :param x:
-    :return:
-    """
-    scaled = np.int16(x/np.max(np.abs(x)) * 32767)
-    wavPath = 'tmp.wav'
-    if os.path.isfile(wavPath):
-        os.remove(wavPath)
-    write(wavPath, fs, scaled)
-    s4p = S4P.Sound4Python()
-    s4p.loadWav(wavPath)
-    s4p.play()
+# def playsound(x, fs=44100.):
+#     """
+#     Playing sound x
+#     :param x:
+#     :return:
+#     """
+#     scaled = np.int16(x/np.max(np.abs(x)) * 32767)
+#     wavPath = 'tmp.wav'
+#     if os.path.isfile(wavPath):
+#         os.remove(wavPath)
+#     write(wavPath, fs, scaled)
+#     s4p = S4P.Sound4Python()
+#     s4p.loadWav(wavPath)
+#     s4p.play()
 
 def sig(x):
     """
@@ -579,7 +577,7 @@ def flatten(l):
 # ----------------------
 
 if __name__ == "__main__":
-    print "starting!"
+    print("starting!")
     duration = 0.1
     scene = Scene()
     stList = []
@@ -637,7 +635,7 @@ if __name__ == "__main__":
     tone = Tone(freq=fc,  duration=duration)
     scene3.List.append(vibrato)
     x3 = scene3.generate(fs=44100.)
-    playsound(x3)
+    #playsound(x3)
 
 
     #fig3 = scene3.draw_spectrogram()
