@@ -483,7 +483,7 @@ class ShepardRisset(Node):
     ShepardRisset Tone
     """
 
-    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], k=1.1):
+    def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], k=1.1, **kwargs):
         """
         Shepard Tone constructor
         :param fb: base frequency
@@ -492,13 +492,19 @@ class ShepardRisset(Node):
         """
         super(ShepardRisset, self).__init__(delay=delay, List=List)
         self.TAG = "ShepardTone"
-        self.fb = fb
         self.k =k
+        self.interval = interval
+        # backward construction from ending base frequency
+        if 'fb_end' in kwargs:
+            self.fb = kwargs['fb_end']*np.exp(-k*duration)
+        else:
+            self.fb = fb
+
 
         fmin = 5.
         fmax = 40000.
-        imin = int(1./np.log(2)*np.log(fmin/fb))
-        imax = int(1./np.log(2)*np.log(fmax/fb))
+        imin = np.ceil(1./np.log(interval)*np.log(fmin/self.fb))
+        imax = np.floor(1./np.log(interval)*np.log(fmax/self.fb))
         index = np.arange(imin, imax)
         self.List = []
 
@@ -512,17 +518,17 @@ class ShepardRisset(Node):
 
         # initial tones have duration set corresponding to when they cross fmax
         for i in index:
-            fi = 2.**i*self.fb
+            fi = interval**i*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
             instFreq = InstantaneousFrequency(phase=phase(fi), duration=min(duration_tone,duration), env=env)
             self.List.append(instFreq)
 
         # added tones appearing as times goes on
-        dt = np.abs(1./k*np.log(2.))
+        dt = np.abs(1./k*np.log(interval))
         times = np.arange(dt,duration,dt)
 
         for time in times:
-            fi = 2.**index[i_restart]*self.fb
+            fi = interval**index[i_restart]*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
             instFreq = InstantaneousFrequency(phase=phase(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
             self.List.append(instFreq)
