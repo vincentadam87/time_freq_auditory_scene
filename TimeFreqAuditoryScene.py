@@ -168,11 +168,73 @@ class Tone(Leaf):
     def draw(self, ax, prop_delay, prop_scale):
         abs_amp = self.amp*prop_scale
         map_abs_amp = sig((abs_amp-0.2))
-        ax.plot([prop_delay, prop_delay+ self.duration],
+        ax.plot([prop_delay + self.delay, prop_delay + self.delay + self.duration],
                 [self.freq, self.freq],
                 lw=map_abs_amp*4.,
                 alpha=map_abs_amp,
                 color='black')
+
+
+
+
+class AMTone(Tone):
+    """
+    Tone
+    """
+
+    TAG = "AMTone"
+
+    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., fmod=10.):
+
+        super(AMTone, self).__init__(delay=delay, duration=duration)
+        self.freq = freq
+        self.amp = amp
+        self.fmod = fmod
+
+    def generate(self, fs):
+        t = np.linspace(0., self.duration, int(self.duration*fs))
+        y = np.cos(2.*np.pi*self.freq*t)*(0.5+0.5*np.cos(2.*np.pi*self.fmod*t))
+        # apply border smoothing in the form of a raising squared cosine amplitude modulation
+        tau = 0.02  # 10ms
+        Ltau = int(tau*fs)
+        up = 1.-np.cos(np.linspace(0, np.pi/2., Ltau))**2
+        down = np.cos(np.linspace(0, np.pi/2., Ltau))**2
+        y[0:Ltau] *= up
+        y[-Ltau:] *= down
+        return y*self.amp
+
+    def getduration(self):
+        return self.duration
+
+    def print_content(self):
+        print(self.TAG+\
+              ", freq:"+str(self.freq)+\
+              ", amp:"+str(self.amp)+\
+              ", fmod:"+str(self.fmod)+\
+              ", duration:"+str(self.duration)+\
+              ", delay:"+str(self.delay))
+
+    def draw(self, ax, prop_delay, prop_scale):
+        abs_amp = self.amp*prop_scale
+        map_abs_amp = sig((abs_amp-0.2))
+        tmod = 1./self.fmod
+        t = np.arange(0,self.duration,tmod)
+        for ti in t:
+            #print  ti, ti+0.5*tmod, self.duration
+            ax.plot([prop_delay + self.delay + ti, prop_delay + self.delay + ti+0.5*tmod],
+                    [self.freq, self.freq],
+                    lw=map_abs_amp*4.,
+                    alpha=map_abs_amp,
+                    color='black')
+
+
+
+
+
+
+
+
+
 
 class Sweep(Leaf):
     """
