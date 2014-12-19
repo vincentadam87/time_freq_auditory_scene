@@ -4,7 +4,9 @@ Script to run all the tests
 import os, sys
 
 # add parent folder to path ( ../tests )
-parent_folder = os.path.split(os.path.abspath('.'))[0]
+current_folder = os.path.abspath('.')
+parent_folder = os.path.split(current_folder)[0]
+sys.path.append(current_folder)
 sys.path.append(parent_folder)
 
 
