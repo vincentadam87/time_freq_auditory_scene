@@ -9,8 +9,6 @@ This is useful:
 
 import numpy as np
 from abc import *
-from scipy.io.wavfile import write
-import os
 from matplotlib import pyplot as plt
 import copy
 import collections
@@ -66,7 +64,6 @@ class Node(object):
         for node in self.List:
             node.draw(ax, prop_delay+self.delay, prop_scale*self.scale)
 
-
 class Scene(Node):
     """
     Scene, implements Node + has extra method to draw spectrogram
@@ -99,8 +96,6 @@ class Scene(Node):
         Clear all hierachy in tone
         """
         self.List = [item for item in flatten(self.List)]
-
-
 
 class Leaf(object):
     """
@@ -179,9 +174,6 @@ class Tone(Leaf):
                 alpha=map_abs_amp,
                 color='black')
 
-
-
-
 class AMTone(Tone):
     """
     Tone
@@ -231,15 +223,6 @@ class AMTone(Tone):
                     lw=map_abs_amp*4.,
                     alpha=map_abs_amp,
                     color='black')
-
-
-
-
-
-
-
-
-
 
 class Sweep(Leaf):
     """
@@ -295,12 +278,13 @@ class InstantaneousFrequency(Leaf):
 
     TAG = "InstantaneousFrequency"
 
-    def __init__(self, phase=None, i_freq=None, delay=0., duration=1.,  env=None):
+    def __init__(self, phase=None, i_freq=None, delay=0., duration=1., amp=1.,  env=None):
 
         super(InstantaneousFrequency, self).__init__(delay=delay, duration=duration)
         self.phase = copy.deepcopy(phase)
         self.i_freq = copy.deepcopy(i_freq)
         self.env = env
+        self.amp = amp
 
 
 
@@ -315,8 +299,11 @@ class InstantaneousFrequency(Leaf):
             ift = self.i_freq(t)/fs
             phase = np.cumsum(ift)
 
+        if self.env is not None:
+            ampt = self.env.amp(ift*fs)  # the instantaneous amplitude
+        else:
+            ampt = self.amp
 
-        ampt = self.env.amp(ift*fs)  # the instantaneous amplitude
         y = np.cos(2.*np.pi*phase)*ampt
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
         tau = 0.02  # 10ms
@@ -682,7 +669,6 @@ class ShepardFM(Node):
             fi = interval**i*self.fb
             instFreq = InstantaneousFrequency(i_freq=inst_freq(fi), duration=duration, env=env)
             self.List.append(instFreq)
-
 
 
 # ----------------------
