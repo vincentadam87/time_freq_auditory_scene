@@ -137,15 +137,20 @@ class Tone(Leaf):
 
     TAG = "Tone"
 
-    def __init__(self, freq=100., delay=0., duration=1.,  amp=1.):
+    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None):
 
         super(Tone, self).__init__(delay=delay, duration=duration)
         self.freq = freq
         self.amp = amp
 
+        # random phase if not specified
+        if phase is None:
+            phase = np.random.rand()*np.pi*2.
+        self.phase = phase
+
     def generate(self, fs):
         t = np.linspace(0., self.duration, int(self.duration*fs))
-        y = np.cos(2.*np.pi*self.freq*t)
+        y = np.cos(2.*np.pi*self.freq*t + self.phase)
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
         tau = 0.02  # 10ms
         Ltau = int(tau*fs)
@@ -303,9 +308,15 @@ class GaussianSpectralEnvelope(SpectralEnvelope):
     mu_log = None
     sigma_log = None
 
-    def __init__(self, mu_log=2., sigma_log=1.):
-        self.mu_log = mu_log
-        self.sigma_log = sigma_log
+    def __init__(self, **kwargs):
+        if 'mu_log' in kwargs:
+            self.mu_log=kwargs['mu_log']
+        elif 'mu' in kwargs:
+            self.mu_log=np.log(kwargs['mu'])
+        if 'sigma_log' in kwargs:
+            self.sigma_log = kwargs['sigma_log']
+        elif 'sigma_oct' in kwargs:
+            self.sigma_log = kwargs['sigma_oct']*np.log(2.)
 
     def amp(self, x):
         return g_env(x, self.mu_log, self.sigma_log)
@@ -402,6 +413,45 @@ class Chord(Node):
         self.amps = self.env.amp(self.freqs) # won't work if no enveloppe
         self.build_tones()
 
+class WhiteNoise(Leaf):
+    """
+    WhiteNoise
+    """
+
+    TAG = "WhiteNoise"
+
+    def __init__(self, delay=0., duration=1.,  amp=1.):
+
+        super(WhiteNoise, self).__init__(delay=delay, duration=duration)
+        self.amp = amp
+
+    def generate(self, fs):
+        t = np.linspace(0., self.duration, int(self.duration*fs))
+        y = np.random.randn(len(t))
+        # apply border smoothing in the form of a raising squared cosine amplitude modulation
+        tau = 0.02  # 10ms
+        Ltau = int(tau*fs)
+        up = 1.-np.cos(np.linspace(0, np.pi/2., Ltau))**2
+        down = np.cos(np.linspace(0, np.pi/2., Ltau))**2
+        y[0:Ltau] *= up
+        y[-Ltau:] *= down
+        return y*self.amp
+
+    def getduration(self):
+        return self.duration
+
+    def print_content(self):
+        print(self.TAG+\
+              ", amp:"+str(self.amp)+\
+              ", duration:"+str(self.duration)+\
+              ", delay:"+str(self.delay))
+
+    def draw(self, ax, prop_delay, prop_scale):
+        abs_amp = self.amp*prop_scale
+        ax.plot([prop_delay+self.delay, prop_delay+self.delay+ self.duration],
+                [100, 100],color='red')
+        ax.plot([prop_delay+self.delay, prop_delay+self.delay+ self.duration],
+                [1000, 1000],color='red')
 
 class ConstantIntervalChord(Chord):
     """
@@ -434,7 +484,6 @@ class ConstantIntervalChord(Chord):
                                           List=List,
                                           env=env)
         self.TAG = "ConstantIntervalChord"
-
 
 class ShepardTone(ConstantIntervalChord):
     """
@@ -476,7 +525,6 @@ class Tritone(Node):
         T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+delay_sp, env=env, fmin=fmin, fmax=fmax)
         self.List = [T1, T2]
         self.TAG = "Tritone"
-
 
 class ShepardRisset(Node):
     """
@@ -533,13 +581,51 @@ class ShepardRisset(Node):
             instFreq = InstantaneousFrequency(phase=phase(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
             self.List.append(instFreq)
 
+class ShepardFM(Node):
+    """
+    Shepard Tone with frequency modulated base frequency (no new incoming tones)
+    """
 
+    def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], amod=0.25, fmod=10., phase=0., **kwargs):
+        """
+        Shepard Tone FM constructor
+        :param fb: base frequency
+        :param interval: the interval between tones (2. for shepard)
+        :param delay:
+        :param amod: amplitude of the frequency modulation in terms of octave
+        :param fmod: frequency of modulation
+        :param duration: duration
+        :param env: function (log f -> amplitude)
+        """
+        super(ShepardFM, self).__init__(delay=delay, List=List)
+        self.TAG = "ShepardTone"
+        self.interval = interval
+        self.amod = amod
+        self.fmod = fmod
+        self.fb = fb
+
+
+        fmin = 5.
+        fmax = 40000.
+        imin = np.ceil(1./np.log(interval)*np.log(fmin/self.fb))
+        imax = np.floor(1./np.log(interval)*np.log(fmax/self.fb))
+        index = np.arange(imin, imax)
+        self.List = []
+
+
+        def inst_freq(fi):
+            return lambda t: fi*np.exp(np.log(interval)*amod*np.cos(2*np.pi*fmod*t+phase))
+
+        for i in index:
+            fi = interval**i*self.fb
+            instFreq = InstantaneousFrequency(i_freq=inst_freq(fi), duration=duration, env=env)
+            self.List.append(instFreq)
 
 
 
 # ----------------------
 
-def g_env(x, mu, sigma):
+def g_env(x, mu_log, sigma_log):
     """
     Unnormalized gaussian envelope
     :param x:
@@ -547,7 +633,7 @@ def g_env(x, mu, sigma):
     :param sigma: standard deviation
     :return:
     """
-    return np.exp(-(np.log(x)-mu)**2/sigma**2)
+    return np.exp(-(np.log(x)-mu_log)**2/sigma_log**2)
 
 # def playsound(x, fs=44100.):
 #     """
