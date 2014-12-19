@@ -1,10 +1,14 @@
 """
 Script to run all the tests
 """
+import os, sys
+
+# add parent folder to path ( ../tests )
+parent_folder = os.path.split(os.path.abspath('.'))[0]
+sys.path.append(parent_folder)
+
 
 import unittest
-
-
 from tests.Test_Leaf import Test_Leaf
 from tests.Test_Scene import Test_Scene
 from tests.Test_Shepard import Test_Shepard
