@@ -670,6 +670,68 @@ class ShepardFM(Node):
             instFreq = InstantaneousFrequency(i_freq=inst_freq(fi), duration=duration, env=env)
             self.List.append(instFreq)
 
+class ToneSequence(Node):
+    """
+    Sequence of tones of same duration, same inter-tone delay
+    """
+    TAG = "ToneSequence"
+
+    def __init__(self, intertone_delay=0.1,
+                 tone_duration=0.5,
+                 freqs=None,
+                 List=[], delay=0., scale=1., env=None):
+        super(ToneSequence, self).__init__(delay=delay, List=List, scale=scale)
+        self.intertone_delay=intertone_delay
+        self.tone_duration=tone_duration
+        self.freqs=freqs
+        self.env=env
+        assert isinstance(self.freqs, list)
+        self.build_tones()
+
+    def build_tones(self):
+        self.List=[]
+        runTime=0
+        for f in self.freqs:
+            amp = self.env.amp(f) if self.env is not None else 1.
+            tone = Tone(freq=f, duration=self.tone_duration, delay=runTime, amp=amp)
+            self.List.append(tone)
+            runTime += self.tone_duration + self.intertone_delay
+
+    def shift_tones(self, shift=1.):
+            """
+            Shift all tones,
+            either by a common shift if argument is scalar
+            or by individual shifts
+            """
+            self.freqs = (np.asarray(self.freqs)*np.asarray(shift)).tolist()
+            self.amps = self.env.amp(self.freqs) # won't work if no enveloppe
+            self.build_tones()
+
+class UniformToneSequence(ToneSequence):
+    """
+    Sequence of tones of same duration, same inter-tone delay
+    Frequencies independently log_uniformly drawn from within a frequency band
+    """
+    TAG = "UniformToneSequence"
+
+    def __init__(self, intertone_delay=0.1,
+                 tone_duration=0.5,
+                 band=[100,200],
+                 n_tones=5,
+                 List=[], delay=0., scale=1., env=None):
+
+        freqs = list( band[0]* (band[1]/band[0])**np.random.rand(n_tones,)  )
+
+        super(UniformToneSequence, self).__init__(
+                intertone_delay=intertone_delay,
+                 tone_duration=tone_duration,
+                 freqs=freqs,
+                 List=List, delay=delay, scale=scale, env=env)
+        self.band=band
+        self.freqs = freqs
+
+
+
 
 # ----------------------
 
