@@ -18,14 +18,13 @@ class Node(object):
     Node
     """
     TAG = "Node"
-    List = None  # list of nodes of leaves
-    delay = None  # delay of node with respect to parent node
-    scale = None  # amplitude scaling applied to all children of node
 
-    def __init__(self, List=[], delay=0., scale=1.):
+    def __init__(self, List=[], delay=0., scale=1., active=True, index=None):
         self.List = List
         self.delay = delay
         self.scale = scale
+        self.active = active
+        self.index = index
 
     def getduration(self):
         return np.max([item.delay+item.getduration() for item in self.List])
@@ -49,9 +48,10 @@ class Node(object):
         duration = self.getduration()
         x = np.zeros((int(duration*fs),))
         for item in self.List:
-            xt = item.generate(fs)
-            i_start = int(item.delay*fs)
-            x[i_start:i_start+len(xt)] += xt*self.scale
+            if item.active is True:
+                xt = item.generate(fs)
+                i_start = int(item.delay*fs)
+                x[i_start:i_start+len(xt)] += xt*self.scale
         return x
 
     def draw(self, ax, prop_delay, prop_scale):
@@ -61,8 +61,9 @@ class Node(object):
         #:param prop_delay: cumulative delay from root
         #:param prop_delay: multiplicated scaling from root
         """
-        for node in self.List:
-            node.draw(ax, prop_delay+self.delay, prop_scale*self.scale)
+        if self.active is True:
+            for node in self.List:
+                node.draw(ax, prop_delay+self.delay, prop_scale*self.scale)
 
 class Scene(Node):
     """
@@ -70,11 +71,10 @@ class Scene(Node):
     It is the root reference for time and scale
     """
 
-    def __init__(self, List=[]):
+    TAG = "Scene"
 
-        super(Scene, self).__init__()
-        self.List = []
-        self.TAG = "Scene"
+    def __init__(self, List=[]):
+        super(Scene, self).__init__(List=List)
 
 
     def draw_spectrogram(self, f_axis="log"):
@@ -103,12 +103,12 @@ class Leaf(object):
     """
 
     TAG = "Leaf"
-    delay = None
-    duration = None
 
-    def __init__(self, delay=0., duration=1.):
+    def __init__(self, delay=0., duration=1., active=True, index=None):
         self.delay = delay
         self.duration = duration
+        self.active = active
+        self.index = index
 
     @abstractmethod
     def generate(self, fs):
@@ -507,6 +507,8 @@ class ConstantIntervalChord(Chord):
     ConstantIntervalChord
     """
 
+    TAG = "ConstantIntervalChord"
+    
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
         """
         ConstantIntervalChord  constructor
@@ -532,12 +534,14 @@ class ConstantIntervalChord(Chord):
                                           duration=duration,
                                           List=List,
                                           env=env)
-        self.TAG = "ConstantIntervalChord"
+
 
 class ShepardTone(ConstantIntervalChord):
     """
     Shepard Tone
     """
+
+    TAG = "ShepardTone"
 
     def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
         """
@@ -555,12 +559,13 @@ class ShepardTone(ConstantIntervalChord):
                                           env=env,
                                           fmin=fmin,
                                           fmax=fmax)
-        self.TAG = "ShepardTone"
 
 class Tritone(Node):
     """
     TriTone (octave interval)
     """
+
+    TAG = "Tritone"
 
     def __init__(self, fb=50., duration_sp=1., delay_sp=0., delay=0., env=None, fmin=5, fmax=40000):
         """
@@ -573,12 +578,13 @@ class Tritone(Node):
         T1 = ShepardTone(fb=fb, duration=duration_sp, delay=0., env=env, fmin=fmin, fmax=fmax)
         T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+delay_sp, env=env, fmin=fmin, fmax=fmax)
         self.List = [T1, T2]
-        self.TAG = "Tritone"
 
 class ShepardRisset(Node):
     """
     ShepardRisset Tone
     """
+
+    TAG = "ShepardRisset"
 
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], k=1.1, **kwargs):
         """
@@ -587,8 +593,8 @@ class ShepardRisset(Node):
         :param duration: duration
         :param env: function (log f -> amplitude)
         """
+
         super(ShepardRisset, self).__init__(delay=delay, List=List)
-        self.TAG = "ShepardTone"
         self.k =k
         self.interval = interval
         # backward construction from ending base frequency
@@ -635,6 +641,9 @@ class ShepardFM(Node):
     Shepard Tone with frequency modulated base frequency (no new incoming tones)
     """
 
+    TAG = "ShepardFM"
+
+
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], amod=0.25, fmod=10., phase=0., **kwargs):
         """
         Shepard Tone FM constructor
@@ -647,7 +656,6 @@ class ShepardFM(Node):
         :param env: function (log f -> amplitude)
         """
         super(ShepardFM, self).__init__(delay=delay, List=List)
-        self.TAG = "ShepardTone"
         self.interval = interval
         self.amod = amod
         self.fmod = fmod
