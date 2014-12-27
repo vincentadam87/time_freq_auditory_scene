@@ -36,6 +36,7 @@ class Test_Leaf(unittest.TestCase):
             ]
 
         for leaf in leaves:
+            print(leaf.TAG)
             x = leaf.generate(self.fs)
             self.assertIsInstance(x, np.ndarray)
             self.assertTrue(x.ndim == 1)

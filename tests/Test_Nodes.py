@@ -34,6 +34,7 @@ class Test_Nodes(unittest.TestCase):
 
         for item in items:
             x = item.generate(self.fs)
+            print(item.TAG)
             self.assertIsInstance(x, np.ndarray)
             self.assertTrue(x.ndim == 1)
 
