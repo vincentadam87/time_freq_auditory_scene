@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Chambers &mdash; Time Frequency Auditory Scene 0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Time Frequency Auditory Scene 0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Time Frequency Auditory Scene 0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for Chambers</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Classes to design the sounds of Chambers and Pressnitzer 2014</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">TimeFreqAuditoryScene</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="Context"><a class="viewcode-back" href="../Chambers.html#Chambers.Context">[docs]</a><span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context</span>
+<span class="sd">    A sequence of shepard tones with base frequency sampled uniformly with half an octave up or down of a given base frequency</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Context&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_tones</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                    <span class="n">tone_duration</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                    <span class="n">inter_tone_interval</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                    <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">fb_T1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">bias</span><span class="o">=</span><span class="s">&#39;up&#39;</span><span class="p">,</span>
+                    <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tones</span> <span class="o">=</span> <span class="n">n_tones</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span> <span class="o">=</span> <span class="n">tone_duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inter_tone_interval</span> <span class="o">=</span> <span class="n">inter_tone_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fb_T1</span> <span class="o">=</span> <span class="n">fb_T1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">bias</span>
+
+        <span class="k">assert</span> <span class="n">fb_T1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+        <span class="n">bias_sign</span> <span class="o">=</span> <span class="mf">1.</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">==</span> <span class="s">&#39;up&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.</span>
+
+        <span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">runTime</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tones</span><span class="p">):</span>
+            <span class="n">fb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fb_T1</span><span class="o">*</span><span class="mf">2.</span><span class="o">**</span><span class="p">(</span><span class="n">bias_sign</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="mf">6.</span><span class="p">)</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">ShepardTone</span><span class="p">(</span><span class="n">fb</span><span class="o">=</span><span class="n">fb</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="n">runTime</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">)</span>
+            <span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">st</span><span class="p">)</span>
+            <span class="n">runTime</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_tone_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="n">List</span>
+</div>
+<div class="viewcode-block" id="Clearing"><a class="viewcode-back" href="../Chambers.html#Chambers.Clearing">[docs]</a><span class="k">class</span> <span class="nc">Clearing</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Clearing stimulus</span>
+<span class="sd">    A sequence of random base frequency Half-Octave interval shepard tones</span>
+<span class="sd">    The aim is to wipe out &quot;traces&quot; of previously heard shepard Tones</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Clearing&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_tones</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                    <span class="n">tone_duration</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                    <span class="n">inter_tone_interval</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                    <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">List</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Clearing</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tones</span> <span class="o">=</span> <span class="n">n_tones</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span> <span class="o">=</span> <span class="n">tone_duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inter_tone_interval</span> <span class="o">=</span> <span class="n">inter_tone_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">env</span>
+
+        <span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">runTime</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tones</span><span class="p">):</span>
+            <span class="n">fb</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">ConstantIntervalChord</span><span class="p">(</span><span class="n">fb</span><span class="o">=</span><span class="n">fb</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="n">runTime</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">)</span>
+            <span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">st</span><span class="p">)</span>
+            <span class="n">runTime</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_tone_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="n">List</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Time Frequency Auditory Scene 0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Vincent Adam.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

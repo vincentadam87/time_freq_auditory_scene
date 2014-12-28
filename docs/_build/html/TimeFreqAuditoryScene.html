@@ -1,0 +1,574 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>TimeFreqAuditoryScene module &mdash; Time Frequency Auditory Scene 0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Time Frequency Auditory Scene 0 documentation" href="index.html" />
+    <link rel="next" title="Chambers module" href="Chambers.html" />
+    <link rel="prev" title="Table of contents" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Chambers.html" title="Chambers module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Table of contents"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Time Frequency Auditory Scene 0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-TimeFreqAuditoryScene">
+<span id="timefreqauditoryscene-module"></span><h1>TimeFreqAuditoryScene module<a class="headerlink" href="#module-TimeFreqAuditoryScene" title="Permalink to this headline">¶</a></h1>
+<p>Classes and functions to declare, play and plot auditory scene populated by elements in the (time, frequency) domain
+The scene is organized as a tree with Leaves as atom elements of the scene.
+The tree offers a way to group atoms, and make group of groups etc...
+This is useful:
+- to declare structured groups of atoms (ex shepard tone)
+- to easily create repeated patterns (time shifted groups)</p>
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.AMTone">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">AMTone</tt><big>(</big><em>freq=100.0</em>, <em>delay=0.0</em>, <em>duration=1.0</em>, <em>amp=1.0</em>, <em>fmod=10.0</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#AMTone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.AMTone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Tone" title="TimeFreqAuditoryScene.Tone"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Tone</span></tt></a></p>
+<p>Tone</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.AMTone.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'AMTone'</em><a class="headerlink" href="#TimeFreqAuditoryScene.AMTone.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.AMTone.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#AMTone.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.AMTone.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.AMTone.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#AMTone.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.AMTone.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.AMTone.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#AMTone.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.AMTone.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.AMTone.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#AMTone.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.AMTone.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Chord">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Chord</tt><big>(</big><em>duration=1.0</em>, <em>delay=0.0</em>, <em>amps=None</em>, <em>env=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Chord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Chord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Node" title="TimeFreqAuditoryScene.Node"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Node</span></tt></a></p>
+<p>Static Chord of pure tones</p>
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Chord.build_tones">
+<tt class="descname">build_tones</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Chord.build_tones"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Chord.build_tones" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Chord.shift_tones">
+<tt class="descname">shift_tones</tt><big>(</big><em>shift=1.0</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Chord.shift_tones"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Chord.shift_tones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift all tones,
+either by a common shift if argument is scalar
+or by individual shifts</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.ConstantIntervalChord">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">ConstantIntervalChord</tt><big>(</big><em>fb=50.0</em>, <em>interval=2.0</em>, <em>duration=1.0</em>, <em>delay=0.0</em>, <em>env=None</em>, <em>List=</em>, <span class="optional">[</span><span class="optional">]</span><em>fmin=5</em>, <em>fmax=40000</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ConstantIntervalChord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ConstantIntervalChord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Chord" title="TimeFreqAuditoryScene.Chord"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Chord</span></tt></a></p>
+<p>ConstantIntervalChord</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.ConstantIntervalChord.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'ConstantIntervalChord'</em><a class="headerlink" href="#TimeFreqAuditoryScene.ConstantIntervalChord.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.GaussianSpectralEnvelope">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">GaussianSpectralEnvelope</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#GaussianSpectralEnvelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.GaussianSpectralEnvelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.SpectralEnvelope" title="TimeFreqAuditoryScene.SpectralEnvelope"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.SpectralEnvelope</span></tt></a></p>
+<p>Gaussian Spectral envelope</p>
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.GaussianSpectralEnvelope.amp">
+<tt class="descname">amp</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#GaussianSpectralEnvelope.amp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.GaussianSpectralEnvelope.amp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.GaussianSpectralEnvelope.mu_log">
+<tt class="descname">mu_log</tt><em class="property"> = None</em><a class="headerlink" href="#TimeFreqAuditoryScene.GaussianSpectralEnvelope.mu_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.GaussianSpectralEnvelope.sigma_log">
+<tt class="descname">sigma_log</tt><em class="property"> = None</em><a class="headerlink" href="#TimeFreqAuditoryScene.GaussianSpectralEnvelope.sigma_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.InstantaneousFrequency">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">InstantaneousFrequency</tt><big>(</big><em>phase=None</em>, <em>i_freq=None</em>, <em>delay=0.0</em>, <em>duration=1.0</em>, <em>amp=1.0</em>, <em>env=None</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#InstantaneousFrequency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.InstantaneousFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Leaf" title="TimeFreqAuditoryScene.Leaf"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Leaf</span></tt></a></p>
+<p>Sound cos(f(t))
+f is the instantaneous frequency</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.InstantaneousFrequency.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'InstantaneousFrequency'</em><a class="headerlink" href="#TimeFreqAuditoryScene.InstantaneousFrequency.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.InstantaneousFrequency.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#InstantaneousFrequency.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.InstantaneousFrequency.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.InstantaneousFrequency.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#InstantaneousFrequency.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.InstantaneousFrequency.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.InstantaneousFrequency.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#InstantaneousFrequency.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.InstantaneousFrequency.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.InstantaneousFrequency.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#InstantaneousFrequency.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.InstantaneousFrequency.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Leaf">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Leaf</tt><big>(</big><em>delay=0.0</em>, <em>duration=1.0</em>, <em>active=True</em>, <em>index=None</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Leaf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Leaf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Abstract Leaf</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.Leaf.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'Leaf'</em><a class="headerlink" href="#TimeFreqAuditoryScene.Leaf.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Leaf.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Leaf.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Leaf.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Leaf.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Leaf.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Leaf.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Leaf.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Leaf.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Leaf.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Leaf.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Leaf.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Leaf.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Node">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Node</tt><big>(</big><em>List=</em>, <span class="optional">[</span><span class="optional">]</span><em>delay=0.0</em>, <em>scale=1.0</em>, <em>active=True</em>, <em>index=None</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Node</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.Node.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'Node'</em><a class="headerlink" href="#TimeFreqAuditoryScene.Node.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Node.addItemToList">
+<tt class="descname">addItemToList</tt><big>(</big><em>item</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node.addItemToList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node.addItemToList" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Node.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node.draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw node, function recursively calls children in tree down to leaves
+#:param ax: pyplot ax
+#:param prop_delay: cumulative delay from root
+#:param prop_delay: multiplicated scaling from root</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Node.flatten">
+<tt class="descname">flatten</tt><big>(</big><em>cum_delay</em>, <em>prod_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node.flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Node.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Node.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Node.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Node.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Node.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Scene">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Scene</tt><big>(</big><em>List=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Scene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Scene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Node" title="TimeFreqAuditoryScene.Node"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Node</span></tt></a></p>
+<p>Scene, implements Node + has extra method to draw spectrogram
+It is the root reference for time and scale</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.Scene.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'Scene'</em><a class="headerlink" href="#TimeFreqAuditoryScene.Scene.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Scene.draw_spectrogram">
+<tt class="descname">draw_spectrogram</tt><big>(</big><em>f_axis='log'</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Scene.draw_spectrogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Scene.draw_spectrogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a matplotlib figure containing drawn spectrogram</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Scene.flatten_scene">
+<tt class="descname">flatten_scene</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Scene.flatten_scene"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Scene.flatten_scene" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear all hierachy in tone</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.ShepardFM">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">ShepardFM</tt><big>(</big><em>fb=50.0</em>, <em>interval=2.0</em>, <em>duration=1.0</em>, <em>delay=0.0</em>, <em>env=None</em>, <em>List=</em>, <span class="optional">[</span><span class="optional">]</span><em>amod=0.25</em>, <em>fmod=10.0</em>, <em>phase=0.0</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ShepardFM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ShepardFM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Node" title="TimeFreqAuditoryScene.Node"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Node</span></tt></a></p>
+<p>Shepard Tone with frequency modulated base frequency (no new incoming tones)</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.ShepardFM.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'ShepardFM'</em><a class="headerlink" href="#TimeFreqAuditoryScene.ShepardFM.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.ShepardRisset">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">ShepardRisset</tt><big>(</big><em>fb=50.0</em>, <em>interval=2.0</em>, <em>duration=1.0</em>, <em>delay=0.0</em>, <em>env=None</em>, <em>List=</em>, <span class="optional">[</span><span class="optional">]</span><em>k=1.1</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ShepardRisset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ShepardRisset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Node" title="TimeFreqAuditoryScene.Node"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Node</span></tt></a></p>
+<p>ShepardRisset Tone</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.ShepardRisset.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'ShepardRisset'</em><a class="headerlink" href="#TimeFreqAuditoryScene.ShepardRisset.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.ShepardTone">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">ShepardTone</tt><big>(</big><em>fb=50.0</em>, <em>duration=1.0</em>, <em>delay=0.0</em>, <em>env=None</em>, <em>List=</em>, <span class="optional">[</span><span class="optional">]</span><em>fmin=5</em>, <em>fmax=40000</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ShepardTone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ShepardTone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.ConstantIntervalChord" title="TimeFreqAuditoryScene.ConstantIntervalChord"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.ConstantIntervalChord</span></tt></a></p>
+<p>Shepard Tone</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.ShepardTone.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'ShepardTone'</em><a class="headerlink" href="#TimeFreqAuditoryScene.ShepardTone.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.SpectralEnvelope">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">SpectralEnvelope</tt><big>(</big><em>env</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#SpectralEnvelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.SpectralEnvelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></a></p>
+<p>Abstract Spectral envelope</p>
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.SpectralEnvelope.amp">
+<tt class="descname">amp</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#SpectralEnvelope.amp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.SpectralEnvelope.amp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Sweep">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Sweep</tt><big>(</big><em>freqs=[100.0, 200.0], delay=0.0, duration=1.0, amp=1.0</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Sweep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Sweep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Leaf" title="TimeFreqAuditoryScene.Leaf"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Leaf</span></tt></a></p>
+<p>Frequency Sweep (Linear interpolation in frequency domain)</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.Sweep.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'Sweep'</em><a class="headerlink" href="#TimeFreqAuditoryScene.Sweep.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Sweep.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Sweep.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Sweep.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Sweep.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Sweep.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Sweep.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Sweep.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Sweep.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Sweep.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Sweep.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Sweep.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Sweep.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Tone">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Tone</tt><big>(</big><em>freq=100.0</em>, <em>delay=0.0</em>, <em>duration=1.0</em>, <em>amp=1.0</em>, <em>phase=None</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Tone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Tone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Leaf" title="TimeFreqAuditoryScene.Leaf"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Leaf</span></tt></a></p>
+<p>Tone</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.Tone.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'Tone'</em><a class="headerlink" href="#TimeFreqAuditoryScene.Tone.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Tone.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Tone.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Tone.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Tone.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Tone.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Tone.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Tone.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Tone.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Tone.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.Tone.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Tone.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Tone.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.ToneSequence">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">ToneSequence</tt><big>(</big><em>intertone_delay=0.1</em>, <em>tone_duration=0.5</em>, <em>freqs=None</em>, <em>List=</em>, <span class="optional">[</span><span class="optional">]</span><em>delay=0.0</em>, <em>scale=1.0</em>, <em>env=None</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ToneSequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ToneSequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Node" title="TimeFreqAuditoryScene.Node"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Node</span></tt></a></p>
+<p>Sequence of tones of same duration, same inter-tone delay</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.ToneSequence.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'ToneSequence'</em><a class="headerlink" href="#TimeFreqAuditoryScene.ToneSequence.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.ToneSequence.build_tones">
+<tt class="descname">build_tones</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ToneSequence.build_tones"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ToneSequence.build_tones" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.ToneSequence.shift_tones">
+<tt class="descname">shift_tones</tt><big>(</big><em>shift=1.0</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#ToneSequence.shift_tones"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.ToneSequence.shift_tones" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift all tones,
+either by a common shift if argument is scalar
+or by individual shifts</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.Tritone">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">Tritone</tt><big>(</big><em>fb=50.0</em>, <em>duration_sp=1.0</em>, <em>delay_sp=0.0</em>, <em>delay=0.0</em>, <em>env=None</em>, <em>fmin=5</em>, <em>fmax=40000</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#Tritone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.Tritone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Node" title="TimeFreqAuditoryScene.Node"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Node</span></tt></a></p>
+<p>TriTone (octave interval)</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.Tritone.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'Tritone'</em><a class="headerlink" href="#TimeFreqAuditoryScene.Tritone.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.UniformToneSequence">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">UniformToneSequence</tt><big>(</big><em>intertone_delay=0.1, tone_duration=0.5, band=[100, 200], n_tones=5, List=[], delay=0.0, scale=1.0, env=None</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#UniformToneSequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.UniformToneSequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.ToneSequence" title="TimeFreqAuditoryScene.ToneSequence"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.ToneSequence</span></tt></a></p>
+<p>Sequence of tones of same duration, same inter-tone delay
+Frequencies independently log_uniformly drawn from within a frequency band</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.UniformToneSequence.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'UniformToneSequence'</em><a class="headerlink" href="#TimeFreqAuditoryScene.UniformToneSequence.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.UnitSpectralEnvelope">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">UnitSpectralEnvelope</tt><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#UnitSpectralEnvelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.UnitSpectralEnvelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.SpectralEnvelope" title="TimeFreqAuditoryScene.SpectralEnvelope"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.SpectralEnvelope</span></tt></a></p>
+<p>Unit Spectral envelope</p>
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.UnitSpectralEnvelope.amp">
+<tt class="descname">amp</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#UnitSpectralEnvelope.amp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.UnitSpectralEnvelope.amp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="TimeFreqAuditoryScene.WhiteNoise">
+<em class="property">class </em><tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">WhiteNoise</tt><big>(</big><em>delay=0.0</em>, <em>duration=1.0</em>, <em>amp=1.0</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#WhiteNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.WhiteNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#TimeFreqAuditoryScene.Leaf" title="TimeFreqAuditoryScene.Leaf"><tt class="xref py py-class docutils literal"><span class="pre">TimeFreqAuditoryScene.Leaf</span></tt></a></p>
+<p>WhiteNoise</p>
+<dl class="attribute">
+<dt id="TimeFreqAuditoryScene.WhiteNoise.TAG">
+<tt class="descname">TAG</tt><em class="property"> = 'WhiteNoise'</em><a class="headerlink" href="#TimeFreqAuditoryScene.WhiteNoise.TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.WhiteNoise.draw">
+<tt class="descname">draw</tt><big>(</big><em>ax</em>, <em>prop_delay</em>, <em>prop_scale</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#WhiteNoise.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.WhiteNoise.draw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.WhiteNoise.generate">
+<tt class="descname">generate</tt><big>(</big><em>fs</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#WhiteNoise.generate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.WhiteNoise.generate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.WhiteNoise.getduration">
+<tt class="descname">getduration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#WhiteNoise.getduration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.WhiteNoise.getduration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="TimeFreqAuditoryScene.WhiteNoise.print_content">
+<tt class="descname">print_content</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#WhiteNoise.print_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.WhiteNoise.print_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="TimeFreqAuditoryScene.flatten">
+<tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">flatten</tt><big>(</big><em>l</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="TimeFreqAuditoryScene.g_env">
+<tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">g_env</tt><big>(</big><em>x</em>, <em>mu_log</em>, <em>sigma_log</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#g_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.g_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unnormalized gaussian envelope
+:param x:
+:param mu: mean
+:param sigma: standard deviation
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="TimeFreqAuditoryScene.sig">
+<tt class="descclassname">TimeFreqAuditoryScene.</tt><tt class="descname">sig</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/TimeFreqAuditoryScene.html#sig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#TimeFreqAuditoryScene.sig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard sigmoid function
+:param x:
+:return:</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Table of contents</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Chambers.html"
+                        title="next chapter">Chambers module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/TimeFreqAuditoryScene.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Chambers.html" title="Chambers module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Table of contents"
+             >previous</a> |</li>
+        <li><a href="index.html">Time Frequency Auditory Scene 0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Vincent Adam.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

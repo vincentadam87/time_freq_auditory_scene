@@ -1,0 +1,945 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>TimeFreqAuditoryScene &mdash; Time Frequency Auditory Scene 0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Time Frequency Auditory Scene 0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Time Frequency Auditory Scene 0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for TimeFreqAuditoryScene</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Classes and functions to declare, play and plot auditory scene populated by elements in the (time, frequency) domain</span>
+<span class="sd">The scene is organized as a tree with Leaves as atom elements of the scene.</span>
+<span class="sd">The tree offers a way to group atoms, and make group of groups etc...</span>
+<span class="sd">This is useful:</span>
+<span class="sd">- to declare structured groups of atoms (ex shepard tone)</span>
+<span class="sd">- to easily create repeated patterns (time shifted groups)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+
+<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Node</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Node&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="n">List</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="n">delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">active</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+
+<div class="viewcode-block" id="Node.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">delay</span><span class="o">+</span><span class="n">item</span><span class="o">.</span><span class="n">getduration</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="Node.addItemToList"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node.addItemToList">[docs]</a>    <span class="k">def</span> <span class="nf">addItemToList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">+</span> <span class="n">item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Node.flatten"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node.flatten">[docs]</a>    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cum_delay</span><span class="p">,</span> <span class="n">prod_scale</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">:</span>
+            <span class="n">l</span> <span class="o">+=</span> <span class="n">item</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">cum_delay</span><span class="p">,</span> <span class="n">prod_scale</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Node.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">:</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">print_content</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Node.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getduration</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">duration</span><span class="o">*</span><span class="n">fs</span><span class="p">),))</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">active</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">xt</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+                <span class="n">i_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">delay</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span><span class="n">i_start</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">xt</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">xt</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+        <span class="k">return</span> <span class="n">x</span>
+</div>
+<div class="viewcode-block" id="Node.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Node.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Draw node, function recursively calls children in tree down to leaves</span>
+<span class="sd">        #:param ax: pyplot ax</span>
+<span class="sd">        #:param prop_delay: cumulative delay from root</span>
+<span class="sd">        #:param prop_delay: multiplicated scaling from root</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Scene"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Scene">[docs]</a><span class="k">class</span> <span class="nc">Scene</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scene, implements Node + has extra method to draw spectrogram</span>
+<span class="sd">    It is the root reference for time and scale</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Scene&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Scene</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Scene.draw_spectrogram"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Scene.draw_spectrogram">[docs]</a>    <span class="k">def</span> <span class="nf">draw_spectrogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f_axis</span><span class="o">=</span><span class="s">&quot;log&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a matplotlib figure containing drawn spectrogram</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">:</span>
+            <span class="n">node</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">prop_scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="n">f_axis</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">f_axis</span><span class="o">==</span><span class="s">&quot;log&quot;</span> <span class="ow">and</span> <span class="s">&quot;log freq (Hz)&quot;</span> <span class="ow">or</span> <span class="s">&quot;freq (Hz)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&quot;time (s)&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s">&quot;Spectrogram&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fig</span>
+</div>
+<div class="viewcode-block" id="Scene.flatten_scene"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Scene.flatten_scene">[docs]</a>    <span class="k">def</span> <span class="nf">flatten_scene</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear all hierachy in tone</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="p">)]</span>
+</div></div>
+<div class="viewcode-block" id="Leaf"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Leaf">[docs]</a><span class="k">class</span> <span class="nc">Leaf</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract Leaf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Leaf&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="n">delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="n">active</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="Leaf.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Leaf.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Leaf.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Leaf.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+</div>
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="Leaf.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Leaf.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="Leaf.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Leaf.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="Tone"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Tone">[docs]</a><span class="k">class</span> <span class="nc">Tone</span><span class="p">(</span><span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tone</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Tone&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>  <span class="n">amp</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tone</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span>
+
+        <span class="c"># random phase if not specified</span>
+        <span class="k">if</span> <span class="n">phase</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">2.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span>
+
+<div class="viewcode-block" id="Tone.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Tone.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">*</span><span class="n">fs</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">*</span><span class="n">t</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
+        <span class="c"># apply border smoothing in the form of a raising squared cosine amplitude modulation</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># 10ms</span>
+        <span class="n">Ltau</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">up</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ltau</span><span class="p">]</span> <span class="o">*=</span> <span class="n">up</span>
+        <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="n">Ltau</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">down</span>
+        <span class="k">return</span> <span class="n">y</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span>
+</div>
+<div class="viewcode-block" id="Tone.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Tone.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+</div>
+<div class="viewcode-block" id="Tone.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Tone.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG</span><span class="o">+</span>\
+              <span class="s">&quot;, freq:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, amp:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, duration:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, delay:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Tone.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Tone.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="n">abs_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="o">*</span><span class="n">prop_scale</span>
+        <span class="n">map_abs_amp</span> <span class="o">=</span> <span class="n">sig</span><span class="p">((</span><span class="n">abs_amp</span><span class="o">-</span><span class="mf">0.2</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">prop_delay</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="n">prop_delay</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">],</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">],</span>
+                <span class="n">lw</span><span class="o">=</span><span class="n">map_abs_amp</span><span class="o">*</span><span class="mf">4.</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">map_abs_amp</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s">&#39;black&#39;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="AMTone"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.AMTone">[docs]</a><span class="k">class</span> <span class="nc">AMTone</span><span class="p">(</span><span class="n">Tone</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tone</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;AMTone&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>  <span class="n">amp</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">fmod</span><span class="o">=</span><span class="mf">10.</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">AMTone</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmod</span> <span class="o">=</span> <span class="n">fmod</span>
+
+<div class="viewcode-block" id="AMTone.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.AMTone.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">*</span><span class="n">fs</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">*</span><span class="n">t</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fmod</span><span class="o">*</span><span class="n">t</span><span class="p">))</span>
+        <span class="c"># apply border smoothing in the form of a raising squared cosine amplitude modulation</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># 10ms</span>
+        <span class="n">Ltau</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">up</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ltau</span><span class="p">]</span> <span class="o">*=</span> <span class="n">up</span>
+        <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="n">Ltau</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">down</span>
+        <span class="k">return</span> <span class="n">y</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span>
+</div>
+<div class="viewcode-block" id="AMTone.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.AMTone.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+</div>
+<div class="viewcode-block" id="AMTone.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.AMTone.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG</span><span class="o">+</span>\
+              <span class="s">&quot;, freq:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, amp:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, fmod:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fmod</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, duration:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, delay:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="AMTone.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.AMTone.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="n">abs_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="o">*</span><span class="n">prop_scale</span>
+        <span class="n">map_abs_amp</span> <span class="o">=</span> <span class="n">sig</span><span class="p">((</span><span class="n">abs_amp</span><span class="o">-</span><span class="mf">0.2</span><span class="p">))</span>
+        <span class="n">tmod</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fmod</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span><span class="n">tmod</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ti</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+            <span class="c">#print  ti, ti+0.5*tmod, self.duration</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">prop_delay</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">+</span> <span class="n">ti</span><span class="p">,</span> <span class="n">prop_delay</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">+</span> <span class="n">ti</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">tmod</span><span class="p">],</span>
+                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">],</span>
+                    <span class="n">lw</span><span class="o">=</span><span class="n">map_abs_amp</span><span class="o">*</span><span class="mf">4.</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="n">map_abs_amp</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="s">&#39;black&#39;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Sweep"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Sweep">[docs]</a><span class="k">class</span> <span class="nc">Sweep</span><span class="p">(</span><span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Frequency Sweep (Linear interpolation in frequency domain)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Sweep&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="p">[</span><span class="mf">100.</span><span class="p">,</span><span class="mf">200.</span><span class="p">],</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>  <span class="n">amp</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Sweep</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="n">freqs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span>
+
+<div class="viewcode-block" id="Sweep.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Sweep.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="n">n</span> <span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">f</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+        <span class="c"># apply border smoothing in the form of a raising squared cosine amplitude modulation</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># 10ms</span>
+        <span class="n">Ltau</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">up</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ltau</span><span class="p">]</span> <span class="o">*=</span> <span class="n">up</span>
+        <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="n">Ltau</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">down</span>
+        <span class="k">return</span> <span class="n">y</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span>
+</div>
+<div class="viewcode-block" id="Sweep.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Sweep.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+</div>
+<div class="viewcode-block" id="Sweep.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Sweep.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG</span><span class="o">+</span>\
+              <span class="s">&quot;, freqs:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, amp:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, duration:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, delay:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Sweep.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Sweep.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="n">abs_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="o">*</span><span class="n">prop_scale</span>
+        <span class="n">map_abs_amp</span> <span class="o">=</span> <span class="n">sig</span><span class="p">((</span><span class="n">abs_amp</span><span class="o">-</span><span class="mf">0.2</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">],</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                <span class="n">lw</span><span class="o">=</span><span class="n">map_abs_amp</span><span class="o">*</span><span class="mf">4.</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">map_abs_amp</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s">&#39;black&#39;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="InstantaneousFrequency"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.InstantaneousFrequency">[docs]</a><span class="k">class</span> <span class="nc">InstantaneousFrequency</span><span class="p">(</span><span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sound cos(f(t))</span>
+<span class="sd">    f is the instantaneous frequency</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;InstantaneousFrequency&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">i_freq</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">amp</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>  <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">InstantaneousFrequency</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_freq</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">i_freq</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">env</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span>
+
+
+
+<div class="viewcode-block" id="InstantaneousFrequency.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.InstantaneousFrequency.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="n">n</span> <span class="p">)</span>  <span class="c"># time support</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c"># the time instantaneous phase</span>
+            <span class="n">ift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>  <span class="c"># the instantaneous frequency</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_freq</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">/</span><span class="n">fs</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">ift</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ampt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">amp</span><span class="p">(</span><span class="n">ift</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>  <span class="c"># the instantaneous amplitude</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ampt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">phase</span><span class="p">)</span><span class="o">*</span><span class="n">ampt</span>
+        <span class="c"># apply border smoothing in the form of a raising squared cosine amplitude modulation</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># 10ms</span>
+        <span class="n">Ltau</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">up</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ltau</span><span class="p">]</span> <span class="o">*=</span> <span class="n">up</span>
+        <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="n">Ltau</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">down</span>
+        <span class="k">return</span> <span class="n">y</span>  <span class="c">#*self.amp</span>
+</div>
+<div class="viewcode-block" id="InstantaneousFrequency.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.InstantaneousFrequency.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+</div>
+<div class="viewcode-block" id="InstantaneousFrequency.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.InstantaneousFrequency.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG</span><span class="o">+</span>\
+              <span class="s">&quot;, f:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f_phase</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, amp:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, duration:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, delay:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="InstantaneousFrequency.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.InstantaneousFrequency.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="n">fs_plot</span> <span class="o">=</span> <span class="mf">2000.</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">*</span><span class="n">fs_plot</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="n">n</span> <span class="p">)</span>  <span class="c"># time support</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c"># the time instantaneous phase</span>
+            <span class="n">ift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span><span class="o">*</span><span class="n">fs_plot</span>  <span class="c"># the instantaneous frequency</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_freq</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_freq</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="n">ift</span> <span class="o">=</span> <span class="n">ift</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="o">+</span><span class="n">t</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ift</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s">&#39;black&#39;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="SpectralEnvelope"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.SpectralEnvelope">[docs]</a><span class="k">class</span> <span class="nc">SpectralEnvelope</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract Spectral envelope</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">env</span>
+
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="SpectralEnvelope.amp"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.SpectralEnvelope.amp">[docs]</a>    <span class="k">def</span> <span class="nf">amp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="GaussianSpectralEnvelope"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.GaussianSpectralEnvelope">[docs]</a><span class="k">class</span> <span class="nc">GaussianSpectralEnvelope</span><span class="p">(</span><span class="n">SpectralEnvelope</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gaussian Spectral envelope</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mu_log</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">sigma_log</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;mu_log&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_log</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;mu_log&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mu_log</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;mu&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&#39;sigma_log&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigma_log</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;sigma_log&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s">&#39;sigma_oct&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigma_log</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;sigma_oct&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GaussianSpectralEnvelope.amp"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.GaussianSpectralEnvelope.amp">[docs]</a>    <span class="k">def</span> <span class="nf">amp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">g_env</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_log</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_log</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="UnitSpectralEnvelope"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.UnitSpectralEnvelope">[docs]</a><span class="k">class</span> <span class="nc">UnitSpectralEnvelope</span><span class="p">(</span><span class="n">SpectralEnvelope</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Unit Spectral envelope</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+<div class="viewcode-block" id="UnitSpectralEnvelope.amp"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.UnitSpectralEnvelope.amp">[docs]</a>    <span class="k">def</span> <span class="nf">amp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="c"># returns 1</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Chord"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Chord">[docs]</a><span class="k">class</span> <span class="nc">Chord</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Static Chord of pure tones</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">amps</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c">#freqs=[], amps=[] List=[]):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Chord of pure tones constructor</span>
+<span class="sd">        # Multiple ways of constructing the chord</span>
+<span class="sd">        # - from frequencies</span>
+<span class="sd">        # -- and amplitude</span>
+<span class="sd">        # -- and spectral envelope</span>
+<span class="sd">        # - from a base freq and intervals</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Chord</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Chord&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># constructing from preexisting tone</span>
+        <span class="k">if</span> <span class="s">&#39;chord&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;chord&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">freqs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amps</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;chord&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">amps</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;chord&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">List</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">duration</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;chord&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">duration</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;chord&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">env</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Constructing frequencies</span>
+            <span class="c"># - constructing from pairs</span>
+            <span class="k">if</span> <span class="s">&#39;freqs&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;freqs&#39;</span><span class="p">]</span>
+            <span class="c"># - constructing from base and intervals</span>
+            <span class="k">elif</span> <span class="s">&#39;fb&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="s">&#39;intervals&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fb&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;intervals&#39;</span><span class="p">])</span>
+
+
+            <span class="c"># Constructing amplitudes</span>
+
+            <span class="c"># - from input</span>
+            <span class="k">if</span> <span class="n">amps</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">amps</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;amps&#39;</span><span class="p">]</span>
+            <span class="c"># - from enveloppe</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">env</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">env</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">UnitSpectralEnvelope</span><span class="p">()</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">amps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">amp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span>
+
+
+
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amps</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_tones</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Chord.build_tones"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Chord.build_tones">[docs]</a>    <span class="k">def</span> <span class="nf">build_tones</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">n_chord</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_chord</span><span class="p">):</span>
+            <span class="n">tone</span> <span class="o">=</span> <span class="n">Tone</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span>
+                        <span class="n">duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span>
+                        <span class="n">amp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">amps</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tone</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Chord.shift_tones"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Chord.shift_tones">[docs]</a>    <span class="k">def</span> <span class="nf">shift_tones</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shift all tones,</span>
+<span class="sd">        either by a common shift if argument is scalar</span>
+<span class="sd">        or by individual shifts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">shift</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">shift</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">shift</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">amp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span> <span class="c"># won&#39;t work if no enveloppe</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_tones</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="WhiteNoise"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.WhiteNoise">[docs]</a><span class="k">class</span> <span class="nc">WhiteNoise</span><span class="p">(</span><span class="n">Leaf</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    WhiteNoise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;WhiteNoise&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>  <span class="n">amp</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">WhiteNoise</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span>
+
+<div class="viewcode-block" id="WhiteNoise.generate"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.WhiteNoise.generate">[docs]</a>    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">*</span><span class="n">fs</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+        <span class="c"># apply border smoothing in the form of a raising squared cosine amplitude modulation</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># 10ms</span>
+        <span class="n">Ltau</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="n">fs</span><span class="p">)</span>
+        <span class="n">up</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">Ltau</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Ltau</span><span class="p">]</span> <span class="o">*=</span> <span class="n">up</span>
+        <span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="n">Ltau</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">down</span>
+        <span class="k">return</span> <span class="n">y</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span>
+</div>
+<div class="viewcode-block" id="WhiteNoise.getduration"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.WhiteNoise.getduration">[docs]</a>    <span class="k">def</span> <span class="nf">getduration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>
+</div>
+<div class="viewcode-block" id="WhiteNoise.print_content"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.WhiteNoise.print_content">[docs]</a>    <span class="k">def</span> <span class="nf">print_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">TAG</span><span class="o">+</span>\
+              <span class="s">&quot;, amp:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, duration:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span><span class="o">+</span>\
+              <span class="s">&quot;, delay:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="WhiteNoise.draw"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.WhiteNoise.draw">[docs]</a>    <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">prop_delay</span><span class="p">,</span> <span class="n">prop_scale</span><span class="p">):</span>
+        <span class="n">abs_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp</span><span class="o">*</span><span class="n">prop_scale</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="n">prop_delay</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1000</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="ConstantIntervalChord"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ConstantIntervalChord">[docs]</a><span class="k">class</span> <span class="nc">ConstantIntervalChord</span><span class="p">(</span><span class="n">Chord</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ConstantIntervalChord</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ConstantIntervalChord&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fb</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">fmin</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="mi">40000</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ConstantIntervalChord  constructor</span>
+<span class="sd">        :param fb: base frequency</span>
+<span class="sd">        :param duration: duration</span>
+<span class="sd">        :param env: function (log f -&gt; amplitude)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fb</span> <span class="o">=</span> <span class="n">fb</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmin</span> <span class="o">=</span> <span class="n">fmin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmax</span> <span class="o">=</span> <span class="n">fmax</span>
+        <span class="n">imin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fmin</span><span class="o">/</span><span class="n">fb</span><span class="p">))</span>
+        <span class="n">imax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fmax</span><span class="o">/</span><span class="n">fb</span><span class="p">))</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">imin</span><span class="p">,</span> <span class="n">imax</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
+            <span class="n">fi</span> <span class="o">=</span> <span class="n">interval</span><span class="o">**</span><span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fi</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">amp</span><span class="p">(</span><span class="n">fi</span><span class="p">))</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConstantIntervalChord</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span>
+                                          <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+                                          <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">,</span>
+                                          <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ShepardTone"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ShepardTone">[docs]</a><span class="k">class</span> <span class="nc">ShepardTone</span><span class="p">(</span><span class="n">ConstantIntervalChord</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shepard Tone</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ShepardTone&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fb</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">fmin</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="mi">40000</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shepard Tone constructor</span>
+<span class="sd">        :param fb: base frequency</span>
+<span class="sd">        :param duration: duration</span>
+<span class="sd">        :param env: function (log f -&gt; amplitude)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">ShepardTone</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">fb</span><span class="o">=</span><span class="n">fb</span><span class="p">,</span>
+                                          <span class="n">interval</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span>
+                                          <span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span>
+                                          <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+                                          <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">,</span>
+                                          <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                                          <span class="n">fmin</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span>
+                                          <span class="n">fmax</span><span class="o">=</span><span class="n">fmax</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Tritone"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.Tritone">[docs]</a><span class="k">class</span> <span class="nc">Tritone</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TriTone (octave interval)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;Tritone&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fb</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">duration_sp</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">delay_sp</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fmin</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="mi">40000</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TriTone constructor</span>
+<span class="sd">        :param fb: base frequency of first tone</span>
+<span class="sd">        :param duration_sp: duration of shepard tones in tritone</span>
+<span class="sd">        :param interval_sp: interval between shepard tones in tritone</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Tritone</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">)</span>
+        <span class="n">T1</span> <span class="o">=</span> <span class="n">ShepardTone</span><span class="p">(</span><span class="n">fb</span><span class="o">=</span><span class="n">fb</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration_sp</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span> <span class="n">fmin</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="n">fmax</span><span class="p">)</span>
+        <span class="n">T2</span> <span class="o">=</span> <span class="n">ShepardTone</span><span class="p">(</span><span class="n">fb</span><span class="o">=</span><span class="n">fb</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration_sp</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="n">duration_sp</span><span class="o">+</span><span class="n">delay_sp</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span> <span class="n">fmin</span><span class="o">=</span><span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="n">fmax</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ShepardRisset"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ShepardRisset">[docs]</a><span class="k">class</span> <span class="nc">ShepardRisset</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ShepardRisset Tone</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ShepardRisset&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fb</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">k</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shepard Tone constructor</span>
+<span class="sd">        :param fb: base frequency</span>
+<span class="sd">        :param duration: duration</span>
+<span class="sd">        :param env: function (log f -&gt; amplitude)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">ShepardRisset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span><span class="n">k</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="c"># backward construction from ending base frequency</span>
+        <span class="k">if</span> <span class="s">&#39;fb_end&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;fb_end&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">k</span><span class="o">*</span><span class="n">duration</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fb</span> <span class="o">=</span> <span class="n">fb</span>
+
+
+        <span class="n">fmin</span> <span class="o">=</span> <span class="mf">5.</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="mf">40000.</span>
+        <span class="n">imin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fmin</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span><span class="p">))</span>
+        <span class="n">imax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fmax</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span><span class="p">))</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">imin</span><span class="p">,</span> <span class="n">imax</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+        <span class="c"># fixed form of temporal evolution to have constant speed over the circle</span>
+        <span class="k">def</span> <span class="nf">phase</span><span class="p">(</span><span class="n">fi</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">fi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">k</span><span class="p">)</span><span class="o">/</span><span class="n">k</span>
+
+        <span class="n">i_restart</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">f_thresh</span> <span class="o">=</span> <span class="n">fmin</span> <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">fmax</span>
+
+        <span class="c"># initial tones have duration set corresponding to when they cross fmax</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
+            <span class="n">fi</span> <span class="o">=</span> <span class="n">interval</span><span class="o">**</span><span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span>
+            <span class="n">duration_tone</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">f_thresh</span><span class="o">/</span><span class="n">fi</span><span class="p">))</span>
+            <span class="n">instFreq</span> <span class="o">=</span> <span class="n">InstantaneousFrequency</span><span class="p">(</span><span class="n">phase</span><span class="o">=</span><span class="n">phase</span><span class="p">(</span><span class="n">fi</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">duration_tone</span><span class="p">,</span><span class="n">duration</span><span class="p">),</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instFreq</span><span class="p">)</span>
+
+        <span class="c"># added tones appearing as times goes on</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">))</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span><span class="n">duration</span><span class="p">,</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">times</span><span class="p">:</span>
+            <span class="n">fi</span> <span class="o">=</span> <span class="n">interval</span><span class="o">**</span><span class="n">index</span><span class="p">[</span><span class="n">i_restart</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span>
+            <span class="n">duration_tone</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">f_thresh</span><span class="o">/</span><span class="n">fi</span><span class="p">))</span>
+            <span class="n">instFreq</span> <span class="o">=</span> <span class="n">InstantaneousFrequency</span><span class="p">(</span><span class="n">phase</span><span class="o">=</span><span class="n">phase</span><span class="p">(</span><span class="n">fi</span><span class="p">),</span><span class="n">delay</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">duration</span><span class="o">-</span><span class="n">time</span><span class="p">,</span><span class="n">duration_tone</span><span class="p">),</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instFreq</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ShepardFM"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ShepardFM">[docs]</a><span class="k">class</span> <span class="nc">ShepardFM</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shepard Tone with frequency modulated base frequency (no new incoming tones)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ShepardFM&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fb</span><span class="o">=</span><span class="mf">50.</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">amod</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">fmod</span><span class="o">=</span><span class="mf">10.</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shepard Tone FM constructor</span>
+<span class="sd">        :param fb: base frequency</span>
+<span class="sd">        :param interval: the interval between tones (2. for shepard)</span>
+<span class="sd">        :param delay:</span>
+<span class="sd">        :param amod: amplitude of the frequency modulation in terms of octave</span>
+<span class="sd">        :param fmod: frequency of modulation</span>
+<span class="sd">        :param duration: duration</span>
+<span class="sd">        :param env: function (log f -&gt; amplitude)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ShepardFM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amod</span> <span class="o">=</span> <span class="n">amod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fmod</span> <span class="o">=</span> <span class="n">fmod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fb</span> <span class="o">=</span> <span class="n">fb</span>
+
+
+        <span class="n">fmin</span> <span class="o">=</span> <span class="mf">5.</span>
+        <span class="n">fmax</span> <span class="o">=</span> <span class="mf">40000.</span>
+        <span class="n">imin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fmin</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span><span class="p">))</span>
+        <span class="n">imax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">fmax</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span><span class="p">))</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">imin</span><span class="p">,</span> <span class="n">imax</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+        <span class="k">def</span> <span class="nf">inst_freq</span><span class="p">(</span><span class="n">fi</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">fi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span><span class="o">*</span><span class="n">amod</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">fmod</span><span class="o">*</span><span class="n">t</span><span class="o">+</span><span class="n">phase</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">:</span>
+            <span class="n">fi</span> <span class="o">=</span> <span class="n">interval</span><span class="o">**</span><span class="n">i</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">fb</span>
+            <span class="n">instFreq</span> <span class="o">=</span> <span class="n">InstantaneousFrequency</span><span class="p">(</span><span class="n">i_freq</span><span class="o">=</span><span class="n">inst_freq</span><span class="p">(</span><span class="n">fi</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instFreq</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ToneSequence"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ToneSequence">[docs]</a><span class="k">class</span> <span class="nc">ToneSequence</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sequence of tones of same duration, same inter-tone delay</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ToneSequence&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intertone_delay</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">tone_duration</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">freqs</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ToneSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intertone_delay</span><span class="o">=</span><span class="n">intertone_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span><span class="o">=</span><span class="n">tone_duration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">=</span><span class="n">env</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_tones</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ToneSequence.build_tones"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ToneSequence.build_tones">[docs]</a>    <span class="k">def</span> <span class="nf">build_tones</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">runTime</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">:</span>
+            <span class="n">amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">amp</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="mf">1.</span>
+            <span class="n">tone</span> <span class="o">=</span> <span class="n">Tone</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="n">runTime</span><span class="p">,</span> <span class="n">amp</span><span class="o">=</span><span class="n">amp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tone</span><span class="p">)</span>
+            <span class="n">runTime</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tone_duration</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">intertone_delay</span>
+</div>
+<div class="viewcode-block" id="ToneSequence.shift_tones"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.ToneSequence.shift_tones">[docs]</a>    <span class="k">def</span> <span class="nf">shift_tones</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">1.</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Shift all tones,</span>
+<span class="sd">            either by a common shift if argument is scalar</span>
+<span class="sd">            or by individual shifts</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">shift</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">amp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freqs</span><span class="p">)</span> <span class="c"># won&#39;t work if no enveloppe</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_tones</span><span class="p">()</span>
+</div></div>
+<div class="viewcode-block" id="UniformToneSequence"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.UniformToneSequence">[docs]</a><span class="k">class</span> <span class="nc">UniformToneSequence</span><span class="p">(</span><span class="n">ToneSequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sequence of tones of same duration, same inter-tone delay</span>
+<span class="sd">    Frequencies independently log_uniformly drawn from within a frequency band</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;UniformToneSequence&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">intertone_delay</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">tone_duration</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">band</span><span class="o">=</span><span class="p">[</span><span class="mi">100</span><span class="p">,</span><span class="mi">200</span><span class="p">],</span>
+                 <span class="n">n_tones</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="n">List</span><span class="o">=</span><span class="p">[],</span> <span class="n">delay</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="n">freqs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">band</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="n">band</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">band</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_tones</span><span class="p">,)</span>  <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">UniformToneSequence</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+                <span class="n">intertone_delay</span><span class="o">=</span><span class="n">intertone_delay</span><span class="p">,</span>
+                 <span class="n">tone_duration</span><span class="o">=</span><span class="n">tone_duration</span><span class="p">,</span>
+                 <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span>
+                 <span class="n">List</span><span class="o">=</span><span class="n">List</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="n">delay</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">band</span><span class="o">=</span><span class="n">band</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freqs</span> <span class="o">=</span> <span class="n">freqs</span>
+
+
+
+
+<span class="c"># ----------------------</span>
+</div>
+<div class="viewcode-block" id="g_env"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.g_env">[docs]</a><span class="k">def</span> <span class="nf">g_env</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu_log</span><span class="p">,</span> <span class="n">sigma_log</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Unnormalized gaussian envelope</span>
+<span class="sd">    :param x:</span>
+<span class="sd">    :param mu: mean</span>
+<span class="sd">    :param sigma: standard deviation</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">mu_log</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">sigma_log</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c"># def playsound(x, fs=44100.):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Playing sound x</span>
+<span class="c">#     :param x:</span>
+<span class="c">#     :return:</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     scaled = np.int16(x/np.max(np.abs(x)) * 32767)</span>
+<span class="c">#     wavPath = &#39;tmp.wav&#39;</span>
+<span class="c">#     if os.path.isfile(wavPath):</span>
+<span class="c">#         os.remove(wavPath)</span>
+<span class="c">#     write(wavPath, fs, scaled)</span>
+<span class="c">#     s4p = S4P.Sound4Python()</span>
+<span class="c">#     s4p.loadWav(wavPath)</span>
+<span class="c">#     s4p.play()</span>
+</div>
+<div class="viewcode-block" id="sig"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.sig">[docs]</a><span class="k">def</span> <span class="nf">sig</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Standard sigmoid function</span>
+<span class="sd">    :param x:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="flatten"><a class="viewcode-back" href="../TimeFreqAuditoryScene.html#TimeFreqAuditoryScene.flatten">[docs]</a><span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">l</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">Iterable</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">flatten</span><span class="p">(</span><span class="n">el</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">sub</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">el</span>
+
+<span class="c"># ----------------------</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;starting!&quot;</span><span class="p">)</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">scene</span> <span class="o">=</span> <span class="n">Scene</span><span class="p">()</span>
+    <span class="n">stList</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c">#------------------------------------------------</span>
+
+    <span class="c"># declaring interval for sequence of shepard tones</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">**</span><span class="p">(</span><span class="mf">2.</span><span class="o">/</span><span class="mf">12.</span><span class="p">)</span>
+    <span class="c"># declare gaussian envelope on log frequency</span>
+    <span class="n">genv</span> <span class="o">=</span> <span class="n">GaussianSpectralEnvelope</span><span class="p">(</span><span class="n">mu_log</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span> <span class="n">sigma_log</span><span class="o">=</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="c"># Constructing the scene</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+        <span class="n">tmp_st</span> <span class="o">=</span> <span class="n">ShepardTone</span><span class="p">(</span><span class="n">fb</span><span class="o">=</span><span class="mf">10.</span><span class="o">*</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">**</span><span class="n">i</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">genv</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="n">duration</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+        <span class="n">stList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_st</span><span class="p">)</span>
+    <span class="n">scene</span><span class="o">.</span><span class="n">List</span> <span class="o">=</span> <span class="n">stList</span>
+
+    <span class="c"># generate sound</span>
+    <span class="c">#x = scene.generate(fs=44100.)</span>
+    <span class="c">#playsound(x, fs=44100. )</span>
+
+    <span class="c"># draw spectrogram</span>
+    <span class="c">#fig = scene.draw_spectrogram()</span>
+    <span class="c">#plt.show()</span>
+
+    <span class="c">#------------------------------------------------</span>
+
+    <span class="c">#scene2 = Scene()</span>
+    <span class="c">#factor = 2.**(2./12.)</span>
+    <span class="c">#duration = 0.2</span>
+    <span class="c">#dt = duration/4.</span>
+    <span class="c">#for i in range(20):</span>
+    <span class="c">#    start = np.random.rand()</span>
+    <span class="c">#    f_start = 200.+500.*np.random.rand()</span>
+    <span class="c">#    t_start = np.random.rand()*4.</span>
+    <span class="c">#    sweep = Sweep(freqs=[f_start, f_start*factor], delay=dt*i, duration=duration)</span>
+    <span class="c">#    scene2.List.append(sweep)</span>
+
+
+    <span class="c">#x2 = scene2.generate(fs=44100.)</span>
+    <span class="c">#playsound(x2)</span>
+    <span class="c">#fig2 = scene2.draw_spectrogram()</span>
+    <span class="c">#plt.show()</span>
+
+    <span class="c">#------------------------------------------------</span>
+
+    <span class="n">scene3</span> <span class="o">=</span> <span class="n">Scene</span><span class="p">()</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mf">0.3</span>
+    <span class="n">fc</span> <span class="o">=</span> <span class="mf">300.</span>
+    <span class="n">fmod</span> <span class="o">=</span> <span class="mf">100.</span>
+    <span class="n">amod</span> <span class="o">=</span> <span class="mf">1.</span>
+    <span class="c">#f = lambda x: fc+amod*np.cos(2*np.pi*fmod*x)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">0</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">fc</span>
+
+    <span class="n">vibrato</span> <span class="o">=</span> <span class="n">InstantaneousFrequency</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+    <span class="n">tone</span> <span class="o">=</span> <span class="n">Tone</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">fc</span><span class="p">,</span>  <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">)</span>
+    <span class="n">scene3</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vibrato</span><span class="p">)</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="n">scene3</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="mf">44100.</span><span class="p">)</span>
+    <span class="c">#playsound(x3)</span>
+
+
+    <span class="c">#fig3 = scene3.draw_spectrogram()</span>
+    <span class="c">#plt.show()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">Time Frequency Auditory Scene 0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Vincent Adam.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
