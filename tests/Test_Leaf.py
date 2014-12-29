@@ -13,7 +13,7 @@ class Test_Leaf(unittest.TestCase):
     """
     Testing sound generation for leaf elements
     - Tone
-    - AMTone
+    - SAMTone
     - Sweep
     - InstantaneousFrequency
     - WhiteNoise
@@ -29,7 +29,7 @@ class Test_Leaf(unittest.TestCase):
         self.logPoint()
         leaves = [
             Tone(freq=200., duration=self.duration),
-            AMTone(freq=200., duration=self.duration, fmod=10.),
+            SAMTone(freq=200., duration=self.duration, fmod=10.),
             Sweep(freqs=[100.,200.], duration=self.duration),
             InstantaneousFrequency(phase=lambda t: np.exp(t)),
             WhiteNoise(duration=self.duration)
