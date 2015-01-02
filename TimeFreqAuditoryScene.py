@@ -132,9 +132,9 @@ class Tone(Leaf):
 
     TAG = "Tone"
 
-    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None):
+    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None, index=None):
 
-        super(Tone, self).__init__(delay=delay, duration=duration)
+        super(Tone, self).__init__(delay=delay, duration=duration, index=index)
         self.freq = freq
         self.amp = amp
 
@@ -447,7 +447,8 @@ class Chord(Node):
             tone = Tone(freq=self.freqs[i],
                         delay=0.,
                         duration=self.duration,
-                        amp=self.amps[i])
+                        amp=self.amps[i],
+                        index=i)
             self.List.append(tone)
 
     def shift_tones(self, shift=1.):
@@ -698,12 +699,14 @@ class ToneSequence(Node):
 
     def build_tones(self):
         self.List=[]
-        runTime=0
+        runTime = 0
+        index = 0
         for f in self.freqs:
             amp = self.env.amp(f) if self.env is not None else 1.
-            tone = Tone(freq=f, duration=self.tone_duration, delay=runTime, amp=amp)
+            tone = Tone(freq=f, duration=self.tone_duration, delay=runTime, amp=amp, index=index)
             self.List.append(tone)
             runTime += self.tone_duration + self.intertone_delay
+            index += 1
 
     def shift_tones(self, shift=1.):
             """
