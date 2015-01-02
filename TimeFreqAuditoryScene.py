@@ -19,15 +19,36 @@ class Node(object):
     """
     TAG = "Node"
 
-    def __init__(self, List=[], delay=0., scale=1., active=True, index=None):
+    def __init__(self, List=[], delay=0., scale=1., active=True, index=None, draw_bbox=False):
         self.List = List
         self.delay = delay
         self.scale = scale
         self.active = active
         self.index = index
+        self.draw_bbox = draw_bbox
 
     def getduration(self):
-        return np.max([item.delay+item.getduration() for item in self.List])
+        return np.max([item.delay+item.getduration() for item in self.List if item.active==True])
+
+    def getbbox(self):
+        """
+        Get the smallest time/freq box containing elements of the node
+
+        Returns:
+            [tmin, tmax, fmin, fmax] (absolute time and frequency wrt origin of scene)
+        """
+
+        rel_box = [0, 0, float("inf"), float("-inf")] # init relative box
+        for item in self.List:
+            if item.active is True:
+                # get subnode box
+                item_box = item.getbbox()
+                # update current node box
+                rel_box[0] = rel_box[0] if rel_box[0]<item_box[0] else item_box[0]
+                rel_box[2] = rel_box[2] if rel_box[2]<item_box[2] else item_box[2]
+                rel_box[1] = rel_box[1] if rel_box[1]>item_box[1] else item_box[1]
+                rel_box[3] = rel_box[3] if rel_box[3]>item_box[3] else item_box[3]
+        return rel_box
 
     def addItemToList(self, item):
         if type(item) == list:
@@ -64,6 +85,18 @@ class Node(object):
         if self.active is True:
             for node in self.List:
                 node.draw(ax, prop_delay+self.delay, prop_scale*self.scale)
+
+        if self.draw_bbox==True:
+            color = "black"
+            box = self.getbbox()
+            box[0] += prop_delay + self.delay
+            box[1] += prop_delay + self.delay
+            # horizontal
+            ax.plot([box[0], box[1]], [box[2], box[2]], color=color)
+            ax.plot([box[0], box[1]], [box[3], box[3]], color=color)
+            # vertical
+            ax.plot([box[0], box[0]], [box[2], box[3]], color=color)
+            ax.plot([box[1], box[1]], [box[2], box[3]], color=color)
 
 class Scene(Node):
     """
@@ -114,6 +147,10 @@ class Leaf(object):
     def generate(self, fs):
         raise NotImplementedError()
 
+    @abstractmethod
+    def getbbox(self):
+        raise NotImplementedError()
+
     def getduration(self):
         return self.duration
 
@@ -157,6 +194,9 @@ class Tone(Leaf):
 
     def getduration(self):
         return self.duration
+
+    def getbbox(self):
+        return [self.delay, self.delay+self.duration, self.freq, self.freq]
 
     def print_content(self):
         print(self.TAG+\
@@ -253,6 +293,9 @@ class Sweep(Leaf):
 
     def getduration(self):
         return self.duration
+
+    def getbbox(self):
+        return [self.delay, self.delay+self.duration, min(self.freqs), max(self.freqs)]
 
     def print_content(self):
         print(self.TAG+\
@@ -489,6 +532,9 @@ class WhiteNoise(Leaf):
 
     def getduration(self):
         return self.duration
+
+    def getbbox(self):
+        return [self.delay, self.delay+self.duration, 0, float("+inf")]
 
     def print_content(self):
         print(self.TAG+\
