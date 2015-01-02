@@ -28,12 +28,14 @@ class Test_Chambers(unittest.TestCase):
         genv = GaussianSpectralEnvelope(mu=960.,sigma_oct=1.)
         bias = random.choice(['up','down'])
         items = [
-            Context(n_tones=self.n_tones, inter_tone_interval=self.inter_tone_interval, env=genv, bias=bias, fb_T1=1.),
+            Context(n_tones=self.n_tones, inter_tone_interval=self.inter_tone_interval, env=genv, bias=bias, fb_T1=1., type="chords"),
+            Context(n_tones=self.n_tones, inter_tone_interval=self.inter_tone_interval, env=genv, bias=bias, fb_T1=1., type="streams"),
             Clearing(n_tones=self.n_tones, inter_tone_interval=self.inter_tone_interval, env=genv)
             ]
 
         for item in items:
             x = item.generate(self.fs)
+            print(item.TAG)
             self.assertIsInstance(x, np.ndarray)
             self.assertTrue(x.ndim == 1)
 
