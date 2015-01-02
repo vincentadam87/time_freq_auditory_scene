@@ -2,6 +2,7 @@
 Script to run all the tests
 """
 import os, sys
+import unittest
 
 # add parent folder to path ( ../tests )
 current_folder = os.path.abspath('.')
@@ -10,12 +11,11 @@ sys.path.append(current_folder)
 sys.path.append(parent_folder)
 
 
-import unittest
-from tests.Test_Leaf import Test_Leaf
-from tests.Test_Scene import Test_Scene
-from tests.Test_Shepard import Test_Shepard
-from tests.Test_Chambers import Test_Chambers
-from tests.Test_Nodes import Test_Nodes
+from Test_Scene import Test_Scene
+from Test_Leaf import Test_Leaf
+from Test_Shepard import Test_Shepard
+from Test_Chambers import Test_Chambers
+from Test_Nodes import Test_Nodes
 
 """
 Those tests only check input/output consistency

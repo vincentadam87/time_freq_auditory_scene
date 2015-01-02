@@ -30,7 +30,11 @@ class Test_Nodes(unittest.TestCase):
                                      tone_duration=0.5,
                                      n_tones=5,
                                      band=[100.,200.],
-                                     env=genv)]
+                                     env=genv),
+                 ConstantIntervalChord(fb=100.,
+                                       interval=2.,
+                                       duration=0.2,
+                                       env=genv)]
 
         for item in items:
             x = item.generate(self.fs)

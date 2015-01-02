@@ -1,10 +1,17 @@
 """
-Classes and functions to declare, play and plot auditory scene populated by elements in the (time, frequency) domain
+
+This module provides classes to declare, play and plot auditory scene populated by elements in the (time, frequency) domain
 The scene is organized as a tree with Leaves as atom elements of the scene.
+
 The tree offers a way to group atoms, and make group of groups etc...
+
 This is useful:
-- to declare structured groups of atoms (ex shepard tone)
-- to easily create repeated patterns (time shifted groups)
+    - to declare structured groups of atoms (ex. shepard tone)
+    - to easily create repeated patterns (ex. time shifted groups)
+
+.. _Google Python Style Guide:
+   http://google-styleguide.googlecode.com/svn/trunk/pyguide.html
+
 """
 
 import numpy as np
@@ -14,8 +21,14 @@ import copy
 import collections
 
 class Node(object):
-    """
-    Node
+    """Node
+
+    Attributes:
+        List (list): list of Leaf elements in the node
+        delay (float): delay relative to absolute scene start time
+        scale (float): scaling to be applied to all elements deeper in tree
+        active (bool): flag declaring inclusion/exclusion from scene
+        index (int) : additional flag, useful for ordering items
     """
     TAG = "Node"
 
@@ -28,6 +41,12 @@ class Node(object):
         self.draw_bbox = draw_bbox
 
     def getduration(self):
+        """Duration of node
+
+        Returns:
+            duration of node
+
+        """
         return np.max([item.delay+item.getduration() for item in self.List if item.active==True])
 
     def getbbox(self):
@@ -51,6 +70,11 @@ class Node(object):
         return rel_box
 
     def addItemToList(self, item):
+        """Populate node
+
+        Args:
+            item (Node/Leaf or list): element or subtree to add to node
+        """
         if type(item) == list:
             self.List = self.List + item
         else:
@@ -66,6 +90,12 @@ class Node(object):
             item.print_content()
 
     def generate(self, fs):
+        """Generate soundwave
+
+        Args:
+            fs (float): sampling frequency (Hz)
+
+        """
         duration = self.getduration()
         x = np.zeros((int(duration*fs),))
         for item in self.List:
@@ -76,11 +106,13 @@ class Node(object):
         return x
 
     def draw(self, ax, prop_delay, prop_scale):
-        """
-        Draw node, function recursively calls children in tree down to leaves
-        #:param ax: pyplot ax
-        #:param prop_delay: cumulative delay from root
-        #:param prop_delay: multiplicated scaling from root
+        """Draw node
+
+        Args:
+            ax (matplotlib.axes.Axes): axe instance to plot into
+            prop_delay (float): propagated absolute delay of parent node
+            prop_scale (float): propagated absolute scale of parent node
+
         """
         if self.active is True:
             for node in self.List:
@@ -99,20 +131,27 @@ class Node(object):
             ax.plot([box[1], box[1]], [box[2], box[3]], color=color)
 
 class Scene(Node):
-    """
+    """Scene
+
     Scene, implements Node + has extra method to draw spectrogram
     It is the root reference for time and scale
+
     """
 
     TAG = "Scene"
 
     def __init__(self, List=[]):
+        """Constructor"""
         super(Scene, self).__init__(List=List)
 
 
     def draw_spectrogram(self, f_axis="log"):
         """
         Returns a matplotlib figure containing drawn spectrogram
+
+        Args:
+            f_axis (string): type of plot ('log' or 'lin')
+
         """
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
@@ -126,20 +165,28 @@ class Scene(Node):
 
     def flatten_scene(self):
         """
-        Clear all hierachy in tone
+        Clear all hierarchy in tone
         """
         self.List = [item for item in flatten(self.List)]
 
 class Leaf(object):
-    """
-    Abstract Leaf
+    """Abstract Leaf Class
+
+    Attributes:
+        delay (float): delay wrt to start of parent node, default to 0.
+        duration (float): duration of leaf.
+        active (bool): flag for inclusion/exclusion in scene, default to 0.
+        index (int): additional index descriptor, default to None.
+
     """
 
     TAG = "Leaf"
 
-    def __init__(self, delay=0., duration=1., active=True, index=None):
+    def __init__(self, delay=0., duration=1.,amp=1., active=True, index=None):
+        """Constructor"""
         self.delay = delay
         self.duration = duration
+        self.amp = amp
         self.active = active
         self.index = index
 
@@ -163,22 +210,26 @@ class Leaf(object):
         raise NotImplementedError()
 
 class Tone(Leaf):
-    """
-    Tone
+    """Tone
+
+    Attributes:
+        freq (float): frequency of pure tone.
+        amp (float): amplitude of pure tone.
+        phase (float): phase of pure tone.
     """
 
     TAG = "Tone"
 
     def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None, index=None):
+        """Constructor
 
-        super(Tone, self).__init__(delay=delay, duration=duration, index=index)
+        Phase is randomly set if none given.
+        """
+        super(Tone, self).__init__(delay=delay, duration=duration, amp=amp, index=index)
         self.freq = freq
-        self.amp = amp
-
         # random phase if not specified
         if phase is None:
-            phase = np.random.rand()*np.pi*2.
-        self.phase = phase
+            self.phase = np.random.rand()*np.pi*2.
 
     def generate(self, fs):
         t = np.linspace(0., self.duration, int(self.duration*fs))
@@ -214,18 +265,22 @@ class Tone(Leaf):
                 alpha=map_abs_amp,
                 color='black')
 
-class AMTone(Tone):
-    """
-    Tone
+class SAMTone(Tone):
+    """Sinusoid Amplitude Modulated Tone
+
+    Attributes:
+        fmod (float): frequency of envelope modulator
+
     """
 
-    TAG = "AMTone"
+    TAG = "SAMTone"
 
     def __init__(self, freq=100., delay=0., duration=1.,  amp=1., fmod=10.):
-
-        super(AMTone, self).__init__(delay=delay, duration=duration)
-        self.freq = freq
-        self.amp = amp
+        """Constructor"""
+        super(SAMTone, self).__init__(freq=freq,
+                                      amp=amp,
+                                      delay=delay,
+                                      duration=duration)
         self.fmod = fmod
 
     def generate(self, fs):
@@ -265,17 +320,22 @@ class AMTone(Tone):
                     color='black')
 
 class Sweep(Leaf):
-    """
-    Frequency Sweep (Linear interpolation in frequency domain)
+    """Frequency Sweep
+
+    Linear interpolation in frequency domain
+
+    Attributes
+        freqs (list): frequency bounds of the sweep
     """
 
     TAG = "Sweep"
 
     def __init__(self, freqs=[100.,200.], delay=0., duration=1.,  amp=1.):
 
-        super(Sweep, self).__init__(delay=delay, duration=duration)
+        super(Sweep, self).__init__(amp=amp,
+                                    delay=delay,
+                                    duration=duration)
         self.freqs = freqs
-        self.amp = amp
 
     def generate(self, fs):
         n = int(self.duration*fs)
@@ -314,20 +374,27 @@ class Sweep(Leaf):
                 color='black')
 
 class InstantaneousFrequency(Leaf):
-    """
+    """Instantaneous frequency Leaf
     Sound cos(f(t))
     f is the instantaneous frequency
+
+    Attributes
+        phase (function): instantaneous phase.
+        i_freq (function): instantaneous frequency
+        env: spectral envelope
+
     """
 
     TAG = "InstantaneousFrequency"
 
     def __init__(self, phase=None, i_freq=None, delay=0., duration=1., amp=1.,  env=None):
 
-        super(InstantaneousFrequency, self).__init__(delay=delay, duration=duration)
+        super(InstantaneousFrequency, self).__init__(delay=delay,
+                                                     duration=duration,
+                                                     amp=amp)
         self.phase = copy.deepcopy(phase)
         self.i_freq = copy.deepcopy(i_freq)
         self.env = env
-        self.amp = amp
 
 
 
@@ -382,9 +449,7 @@ class InstantaneousFrequency(Leaf):
                 color='black')
 
 class SpectralEnvelope(object):
-    """
-    Abstract Spectral envelope
-    """
+    """Abstract Spectral envelope"""
 
     def __init__(self, env):
         self.env = env
@@ -396,11 +461,22 @@ class SpectralEnvelope(object):
 class GaussianSpectralEnvelope(SpectralEnvelope):
     """
     Gaussian Spectral envelope
+
+    Attributes:
+        mu_log (float): log frequency mean
+        sigma_log (float): log frequency std
     """
-    mu_log = None
-    sigma_log = None
 
     def __init__(self, **kwargs):
+        """Constructor
+
+        Args:
+            **kwargs:
+                mu_log (mean in log domain).
+                mu (mean).
+                sigma_log (sigma in log domain).
+                sigma_oct (sigma in octaves).
+        """
         if 'mu_log' in kwargs:
             self.mu_log=kwargs['mu_log']
         elif 'mu' in kwargs:
@@ -424,12 +500,23 @@ class UnitSpectralEnvelope(SpectralEnvelope):
         return np.ones(np.array(x).shape)
 
 class Chord(Node):
-    """
-    Static Chord of pure tones
+    """Chord
+
+    Chord of pure tones
+
+    Attributes:
+        freqs (list): List of pure tone frequencies
+        amps (list): List of pure tone amplitudes
+        duration (float): shared duration of all tones
+
+        fb (float, optional): base frequency, when constructing form intervals
+        intervals (list, optional): intervals between tones
+
     """
 
+    TAG = "Chord"
+
     def __init__(self, duration=1., delay=0., amps=None, env=None, **kwargs):
-    #freqs=[], amps=[] List=[]):
         """
         Chord of pure tones constructor
         # Multiple ways of constructing the chord
@@ -440,10 +527,8 @@ class Chord(Node):
         """
 
         super(Chord, self).__init__(delay=delay)
-        self.List = []
         self.duration = duration
-        self.TAG = "Chord"
-        self.env = None
+        self.env = env
 
         # constructing from preexisting tone
         if 'chord' in kwargs:
@@ -499,6 +584,10 @@ class Chord(Node):
         Shift all tones,
         either by a common shift if argument is scalar
         or by individual shifts
+
+        Args:
+            shift (float or list): scaling of all frequencies of tones in chord
+
         """
         if isinstance(shift, list):
             assert len(shift) == len(self.freqs)
@@ -507,16 +596,16 @@ class Chord(Node):
         self.build_tones()
 
 class WhiteNoise(Leaf):
-    """
-    WhiteNoise
+    """WhiteNoise
     """
 
     TAG = "WhiteNoise"
 
     def __init__(self, delay=0., duration=1.,  amp=1.):
 
-        super(WhiteNoise, self).__init__(delay=delay, duration=duration)
-        self.amp = amp
+        super(WhiteNoise, self).__init__(delay=delay,
+                                         duration=duration,
+                                         amp=amp)
 
     def generate(self, fs):
         t = np.linspace(0., self.duration, int(self.duration*fs))
@@ -552,50 +641,55 @@ class WhiteNoise(Leaf):
 class ConstantIntervalChord(Chord):
     """
     ConstantIntervalChord
+
+    Attributes
+        fb (float): base frequency
+        interval (float): constant frequency interval
+
     """
 
     TAG = "ConstantIntervalChord"
     
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
+        """ConstantIntervalChord  constructor
+
+        Args
+            fb (float): base frequency
+            interval (float): constant frequency interval
+
         """
-        ConstantIntervalChord  constructor
-        :param fb: base frequency
-        :param duration: duration
-        :param env: function (log f -> amplitude)
-        """
-        self.fb = fb
-        self.fmin = fmin
-        self.fmax = fmax
+
         imin = int(1./np.log(interval)*np.log(fmin/fb))
         imax = int(1./np.log(interval)*np.log(fmax/fb))
         index = np.arange(imin, imax)
-        self.List = []
-        self.freqs = []
-        self.amps = []
+
+        freqs = []
         for i in index:
-            fi = interval**i*self.fb
-            self.freqs.append(fi)
-            self.amps.append(env.amp(fi))
+            fi = interval**i*fb
+            freqs.append(fi)
 
-        super(ConstantIntervalChord, self).__init__(delay=delay,
-                                          duration=duration,
-                                          List=List,
-                                          env=env)
-
+        super(ConstantIntervalChord, self).__init__(freqs=freqs,
+                                                    delay=delay,
+                                                  duration=duration,
+                                                  List=List,
+                                                  env=env)
+        self.fb = fb
+        self.fmin = fmin
+        self.fmax = fmax
 
 class ShepardTone(ConstantIntervalChord):
-    """
-    Shepard Tone
+    """Shepard Tone
+
+
     """
 
     TAG = "ShepardTone"
 
     def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
-        """
-        Shepard Tone constructor
-        :param fb: base frequency
-        :param duration: duration
-        :param env: function (log f -> amplitude)
+        """Shepard Tone constructor
+
+        Args:
+            fb (float): base frequency
         """
 
         super(ShepardTone, self).__init__(fb=fb,
@@ -610,35 +704,47 @@ class ShepardTone(ConstantIntervalChord):
 class Tritone(Node):
     """
     TriTone (octave interval)
+
+    Attributes:
+        fb (float): base frequency of the first tone
+        duration_sp (float): duration of shepard tones in tritone
+        delay_sp (float): delay between shepard tones in tritone
     """
 
     TAG = "Tritone"
 
     def __init__(self, fb=50., duration_sp=1., delay_sp=0., delay=0., env=None, fmin=5, fmax=40000):
-        """
-        TriTone constructor
-        :param fb: base frequency of first tone
-        :param duration_sp: duration of shepard tones in tritone
-        :param interval_sp: interval between shepard tones in tritone
+        """TriTone constructor
+
+        Args:
+            fb (float): base frequency of first tone
+            duration_sp (float): duration of shepard tones in tritone
+            delay_sp (float): delay between shepard tones in tritone
         """
         super(Tritone, self).__init__(delay=delay)
         T1 = ShepardTone(fb=fb, duration=duration_sp, delay=0., env=env, fmin=fmin, fmax=fmax)
         T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+delay_sp, env=env, fmin=fmin, fmax=fmax)
         self.List = [T1, T2]
+        self.fb = fb
+        self.duration_sp = duration_sp
+        self.delay_sp = delay_sp
 
 class ShepardRisset(Node):
-    """
-    ShepardRisset Tone
+    """ShepardRisset Tone
+
+    Attributes:
+        k (float): the directed speed factor of the base frequency
     """
 
     TAG = "ShepardRisset"
 
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], k=1.1, **kwargs):
-        """
-        Shepard Tone constructor
-        :param fb: base frequency
-        :param duration: duration
-        :param env: function (log f -> amplitude)
+        """ShepardRisset constructor
+
+        Args:
+            fb (float): base frequency
+            duration (float): duration
+            k (float): the directed speed factor of the base frequency
         """
 
         super(ShepardRisset, self).__init__(delay=delay, List=List)
@@ -684,7 +790,8 @@ class ShepardRisset(Node):
             self.List.append(instFreq)
 
 class ShepardFM(Node):
-    """
+    """ShepardFM
+
     Shepard Tone with frequency modulated base frequency (no new incoming tones)
     """
 
@@ -692,15 +799,16 @@ class ShepardFM(Node):
 
 
     def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], amod=0.25, fmod=10., phase=0., **kwargs):
-        """
-        Shepard Tone FM constructor
-        :param fb: base frequency
-        :param interval: the interval between tones (2. for shepard)
-        :param delay:
-        :param amod: amplitude of the frequency modulation in terms of octave
-        :param fmod: frequency of modulation
-        :param duration: duration
-        :param env: function (log f -> amplitude)
+        """Shepard Tone FM constructor
+
+        Args:
+            fb: base frequency
+            interval: the interval between tones (2. for shepard)
+            delay:
+            amod: amplitude of the frequency modulation in terms of octave
+            fmod: frequency of modulation
+            duration: duration
+            env: function (log f -> amplitude)
         """
         super(ShepardFM, self).__init__(delay=delay, List=List)
         self.interval = interval
@@ -726,7 +834,8 @@ class ShepardFM(Node):
             self.List.append(instFreq)
 
 class ToneSequence(Node):
-    """
+    """Tone Sequence
+
     Sequence of tones of same duration, same inter-tone delay
     """
     TAG = "ToneSequence"
@@ -735,6 +844,11 @@ class ToneSequence(Node):
                  tone_duration=0.5,
                  freqs=None,
                  List=[], delay=0., scale=1., env=None):
+        """Constructor
+
+        Args:
+            freqs (list): list of tone frequencies
+        """
         super(ToneSequence, self).__init__(delay=delay, List=List, scale=scale)
         self.intertone_delay=intertone_delay
         self.tone_duration=tone_duration
@@ -755,19 +869,28 @@ class ToneSequence(Node):
             index += 1
 
     def shift_tones(self, shift=1.):
-            """
-            Shift all tones,
-            either by a common shift if argument is scalar
-            or by individual shifts
-            """
-            self.freqs = (np.asarray(self.freqs)*np.asarray(shift)).tolist()
-            self.amps = self.env.amp(self.freqs) # won't work if no enveloppe
-            self.build_tones()
+        """
+        Shift all tones,
+        either by a common shift if argument is scalar
+        or by individual shifts
+
+        Args:
+            shift (float or list): scaling of all frequencies of tones in chord
+
+        """
+        self.freqs = (np.asarray(self.freqs)*np.asarray(shift)).tolist()
+        self.amps = self.env.amp(self.freqs) # won't work if no enveloppe
+        self.build_tones()
 
 class UniformToneSequence(ToneSequence):
-    """
+    """Uniform Tone Sequence
+
     Sequence of tones of same duration, same inter-tone delay
     Frequencies independently log_uniformly drawn from within a frequency band
+
+    Attributes:
+        band: band from which tone frequencies are sampled
+
     """
     TAG = "UniformToneSequence"
 
@@ -776,6 +899,13 @@ class UniformToneSequence(ToneSequence):
                  band=[100,200],
                  n_tones=5,
                  List=[], delay=0., scale=1., env=None):
+        """Constructor
+
+        Args:
+            band (list): band from which tone frequencies are sampled
+            n_tones (int): number of tones in sequence
+
+        """
 
         freqs = list( band[0]* (band[1]/band[0])**np.random.rand(n_tones,)  )
 
@@ -793,12 +923,12 @@ class UniformToneSequence(ToneSequence):
 # ----------------------
 
 def g_env(x, mu_log, sigma_log):
-    """
-    Unnormalized gaussian envelope
-    :param x:
-    :param mu: mean
-    :param sigma: standard deviation
-    :return:
+    """Unnormalized gaussian envelope
+
+    Args:
+        x: where to evaluate
+        mu: mean
+        sigma: standard deviation
     """
     return np.exp(-(np.log(x)-mu_log)**2/sigma_log**2)
 
@@ -818,11 +948,7 @@ def g_env(x, mu_log, sigma_log):
 #     s4p.play()
 
 def sig(x):
-    """
-    Standard sigmoid function
-    :param x:
-    :return:
-    """
+    """Standard sigmoid function"""
     return 1./(1+np.exp(-x))
 
 def flatten(l):
@@ -836,66 +962,4 @@ def flatten(l):
 # ----------------------
 
 if __name__ == "__main__":
-    print("starting!")
-    duration = 0.1
-    scene = Scene()
-    stList = []
-
-    #------------------------------------------------
-
-    # declaring interval for sequence of shepard tones
-    k = 2.**(2./12.)
-    # declare gaussian envelope on log frequency
-    genv = GaussianSpectralEnvelope(mu_log=5., sigma_log=2.)
-    # Constructing the scene
-    for i in range(20):
-        tmp_st = ShepardTone(fb=10.*(k)**i, env=genv, delay=duration*i, duration=duration)
-        stList.append(tmp_st)
-    scene.List = stList
-
-    # generate sound
-    #x = scene.generate(fs=44100.)
-    #playsound(x, fs=44100. )
-
-    # draw spectrogram
-    #fig = scene.draw_spectrogram()
-    #plt.show()
-
-    #------------------------------------------------
-
-    #scene2 = Scene()
-    #factor = 2.**(2./12.)
-    #duration = 0.2
-    #dt = duration/4.
-    #for i in range(20):
-    #    start = np.random.rand()
-    #    f_start = 200.+500.*np.random.rand()
-    #    t_start = np.random.rand()*4.
-    #    sweep = Sweep(freqs=[f_start, f_start*factor], delay=dt*i, duration=duration)
-    #    scene2.List.append(sweep)
-
-
-    #x2 = scene2.generate(fs=44100.)
-    #playsound(x2)
-    #fig2 = scene2.draw_spectrogram()
-    #plt.show()
-
-    #------------------------------------------------
-
-    scene3 = Scene()
-    duration = 0.3
-    fc = 300.
-    fmod = 100.
-    amod = 1.
-    #f = lambda x: fc+amod*np.cos(2*np.pi*fmod*x)
-    f = lambda x: 0*x+fc
-
-    vibrato = InstantaneousFrequency(f=f, duration=duration)
-    tone = Tone(freq=fc,  duration=duration)
-    scene3.List.append(vibrato)
-    x3 = scene3.generate(fs=44100.)
-    #playsound(x3)
-
-
-    #fig3 = scene3.draw_spectrogram()
-    #plt.show()
+    pass
