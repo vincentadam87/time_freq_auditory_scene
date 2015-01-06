@@ -114,8 +114,8 @@ class Node(object):
             prop_scale (float): propagated absolute scale of parent node
 
         """
-        if self.active is True:
-            for node in self.List:
+        for node in self.List:
+            if node.active is True:
                 node.draw(ax, prop_delay+self.delay, prop_scale*self.scale)
 
         if self.draw_bbox==True:
@@ -156,7 +156,8 @@ class Scene(Node):
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
         for node in self.List:
-            node.draw(ax, prop_delay=0., prop_scale=1.)
+            if self.active is True:
+                node.draw(ax, prop_delay=0., prop_scale=1.)
         ax.set_yscale(f_axis)
         ax.set_ylabel(f_axis=="log" and "log freq (Hz)" or "freq (Hz)")
         ax.set_xlabel("time (s)")
