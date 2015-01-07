@@ -160,14 +160,12 @@ class StructuredDropOutContext(Context):
             i_max.append(np.argmax(amps))
             amps[i_max[j]] = 0
 
-        print i_max
-
         # Drop
-        for t in range(n_tones):
-            for i in i_max:
-                a = ((t+i) % 2) == 0
-                print a
-                self.List[i].List[t].active = a
+        for i in i_max:
+            for t in range(n_tones):
+                if ((t+i) % 2) == 0:
+                    self.List[i].List[t].active = False
+
 
 class Clearing(Node):
     """

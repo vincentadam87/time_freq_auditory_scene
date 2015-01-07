@@ -156,8 +156,8 @@ class Scene(Node):
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
         for node in self.List:
-            if self.active is True:
-                node.draw(ax, prop_delay=0., prop_scale=1.)
+            if node.active is True:
+               node.draw(ax, prop_delay=0., prop_scale=1.)
         ax.set_yscale(f_axis)
         ax.set_ylabel(f_axis=="log" and "log freq (Hz)" or "freq (Hz)")
         ax.set_xlabel("time (s)")
