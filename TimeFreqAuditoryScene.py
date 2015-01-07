@@ -221,12 +221,12 @@ class Tone(Leaf):
 
     TAG = "Tone"
 
-    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None, index=None):
+    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None, index=None, active=True):
         """Constructor
 
         Phase is randomly set if none given.
         """
-        super(Tone, self).__init__(delay=delay, duration=duration, amp=amp, index=index)
+        super(Tone, self).__init__(delay=delay, duration=duration, amp=amp, index=index, active=active)
         self.freq = freq
         # random phase if not specified
         if phase is None:
