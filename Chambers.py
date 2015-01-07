@@ -21,6 +21,8 @@ class Context(Node):
                     fb_T1=None,
                     type="chords",  # chords or streams
                     bias='up',
+                    range_st=[0,6],
+                    ramp=0.01,
                     List=[], delay=0., scale=1.):
 
         super(Context, self).__init__(delay=delay, List=List, scale=scale)
@@ -32,15 +34,19 @@ class Context(Node):
         self.fb_T1 = fb_T1
         self.bias = bias
         self.type = type
+        self.range_st = range_st
 
         assert fb_T1 is not None
         bias_sign = 1. if self.bias == 'up' else -1.
 
         assert type in ["chords", "streams"]
         List = []
-        shifts = 2.**(bias_sign*np.random.rand(self.n_tones,)*6./12.)
+        shifts = 2.**(bias_sign* (self.range_st[0] + np.random.rand(self.n_tones,)*(self.range_st[1]-self.range_st[0]))/12. )
         fmin = 10.
         fmax = 44000.
+        imin = int(1./np.log(2)*np.log(fmin/fb_T1))
+        imax = int(1./np.log(2)*np.log(fmax/fb_T1))
+        indices = np.arange(imin, imax)
 
         # Construction as a (horizontal) sequence of consecutive Shepard Tones (chords)
         if type == "chords":
@@ -49,6 +55,7 @@ class Context(Node):
                 st = ShepardTone(fb=shifts[i]*fb_T1,
                                  duration=self.tone_duration,
                                  delay=runTime,
+                                 ramp=ramp,
                                  env=self.env,
                                  fmin=fmin,
                                  fmax=fmax)
@@ -57,19 +64,20 @@ class Context(Node):
 
         # Construction as a (vertical) stack of simultaneous tone Sequences (streams)
         elif type == "streams":
-            imin = int(1./np.log(2)*np.log(fmin/fb_T1))
-            imax = int(1./np.log(2)*np.log(fmax/fb_T1))
-            indices = np.arange(imin, imax)
 
             for i in indices:
                 fb = 2**i*fb_T1
                 ts = ToneSequence(intertone_delay=inter_tone_interval,
                             tone_duration=tone_duration,
                             freqs=[shift*fb for shift in shifts],
-                            env=env)
+                            env=env,
+                            ramp=ramp)
                 List.append(ts)
 
-        self.List = List
+        self.add(List)
+        self.fbs = 2**np.array(indices)*fb_T1
+
+
 
 
 class RandomDropOutContext(Context):
@@ -194,7 +202,7 @@ class Clearing(Node):
             st = ConstantIntervalChord(fb=fb, interval=np.sqrt(2), duration=self.tone_duration, delay=runTime, env=self.env)
             List.append(st)
             runTime += self.tone_duration+self.inter_tone_interval
-        self.List = List
+        self.add(List)
 
 
 def sample_discrete(probabilities, size):

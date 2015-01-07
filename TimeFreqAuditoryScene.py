@@ -32,12 +32,14 @@ class Node(object):
     """
     TAG = "Node"
 
-    def __init__(self, List=[], delay=0., scale=1., active=True, index=None, draw_bbox=False):
-        self.List = List
+    def __init__(self, List=[], delay=0., scale=1., active=True, index=None, parent=None, draw_bbox=False):
+        self.List=[]
+        self.add(List)
         self.delay = delay
         self.scale = scale
         self.active = active
         self.index = index
+        self.parent = parent
         self.draw_bbox = draw_bbox
 
     def getduration(self):
@@ -49,6 +51,25 @@ class Node(object):
         """
         return np.max([item.delay+item.getduration() for item in self.List if item.active==True])
 
+    def getstart(self):
+        """Start time relative to root"""
+        if self.parent is not None:
+            return self.parent.getstart()+self.delay
+        else:
+            return 0
+
+    def getTbox(self):
+        start = self.getstart()
+        return [start,start+self.getduration()]
+
+    def getFbox(self):
+        Fbox = [float("inf"), float("-inf")]
+        for item in self.List:
+            Fbox_item = item.getFbox()
+            Fbox[1] = max(Fbox[1],Fbox_item[1])
+            Fbox[0] = min(Fbox[0],Fbox_item[0])
+        return Fbox
+
     def getbbox(self):
         """
         Get the smallest time/freq box containing elements of the node
@@ -56,28 +77,34 @@ class Node(object):
         Returns:
             [tmin, tmax, fmin, fmax] (absolute time and frequency wrt origin of scene)
         """
+        return self.getTbox()+self.getFbox()
 
-        rel_box = [0, 0, float("inf"), float("-inf")] # init relative box
-        for item in self.List:
-            if item.active is True:
-                # get subnode box
-                item_box = item.getbbox()
-                # update current node box
-                rel_box[0] = rel_box[0] if rel_box[0]<item_box[0] else item_box[0]
-                rel_box[2] = rel_box[2] if rel_box[2]<item_box[2] else item_box[2]
-                rel_box[1] = rel_box[1] if rel_box[1]>item_box[1] else item_box[1]
-                rel_box[3] = rel_box[3] if rel_box[3]>item_box[3] else item_box[3]
+
+        #rel_box = [self.getstart(), 0, float("inf"), float("-inf")] # init relative box
+        #for item in self.List:
+        #    if item.active is True:
+        #        # get subnode box
+        #        item_box = item.getbbox()
+        #        item_box[1]+=self.delay
+        #        # update current node box
+        #        rel_box[0] = rel_box[0] if rel_box[0] < item_box[0] else item_box[0]
+        #        rel_box[2] = rel_box[2] if rel_box[2] < item_box[2] else item_box[2]
+        #        rel_box[1] = rel_box[1] if rel_box[1] > item_box[1] else item_box[1]
+        #        rel_box[3] = rel_box[3] if rel_box[3] > item_box[3] else item_box[3]
+
         return rel_box
 
-    def addItemToList(self, item):
+    def add(self, item):
         """Populate node
 
         Args:
             item (Node/Leaf or list): element or subtree to add to node
         """
         if type(item) == list:
-            self.List = self.List + item
+            for i in item:
+                self.add(i)
         else:
+            item.parent = self
             self.List.append(item)
 
     def flatten(self, cum_delay, prod_scale):
@@ -121,8 +148,6 @@ class Node(object):
         if self.draw_bbox==True:
             color = "black"
             box = self.getbbox()
-            box[0] += prop_delay + self.delay
-            box[1] += prop_delay + self.delay
             # horizontal
             ax.plot([box[0], box[1]], [box[2], box[2]], color=color)
             ax.plot([box[0], box[1]], [box[3], box[3]], color=color)
@@ -180,16 +205,18 @@ class Leaf(object):
         index (int): additional index descriptor, default to None.
 
     """
-
+    Parent = None
     TAG = "Leaf"
 
-    def __init__(self, delay=0., duration=1.,amp=1., active=True, index=None):
+    def __init__(self, delay=0., duration=1.,amp=1., active=True, index=None, parent=None):
         """Constructor"""
         self.delay = delay
         self.duration = duration
         self.amp = amp
         self.active = active
         self.index = index
+        self.parent = parent
+
 
     @abstractmethod
     def generate(self, fs):
@@ -217,27 +244,31 @@ class Tone(Leaf):
         freq (float): frequency of pure tone.
         amp (float): amplitude of pure tone.
         phase (float): phase of pure tone.
+        ramp: (float): duration of cosine ramp
     """
 
     TAG = "Tone"
 
-    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., phase=None, index=None, active=True):
+    def __init__(self, freq=100., delay=0., duration=1.,  amp=1., ramp=0.01, phase=None, index=None, active=True):
         """Constructor
 
         Phase is randomly set if none given.
         """
         super(Tone, self).__init__(delay=delay, duration=duration, amp=amp, index=index, active=active)
         self.freq = freq
+        self.ramp = ramp
         # random phase if not specified
         if phase is None:
             self.phase = np.random.rand()*np.pi*2.
 
     def generate(self, fs):
         t = np.linspace(0., self.duration, int(self.duration*fs))
-        y = np.cos(2.*np.pi*self.freq*t + self.phase)
+        if self.freq<fs/2:  # anti-alias safety
+            y = np.cos(2.*np.pi*self.freq*t + self.phase)
+        else:
+            y = np.zeros(t.shape)
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
-        tau = 0.02  # 10ms
-        Ltau = int(tau*fs)
+        Ltau = int(self.ramp*fs)
         up = 1.-np.cos(np.linspace(0, np.pi/2., Ltau))**2
         down = np.cos(np.linspace(0, np.pi/2., Ltau))**2
         y[0:Ltau] *= up
@@ -249,6 +280,12 @@ class Tone(Leaf):
 
     def getbbox(self):
         return [self.delay, self.delay+self.duration, self.freq, self.freq]
+
+    def getTbox(self):
+        return [self.delay, self.delay+self.duration]
+
+    def getFbox(self):
+        return [self.freq, self.freq]
 
     def print_content(self):
         print(self.TAG+\
@@ -357,6 +394,12 @@ class Sweep(Leaf):
 
     def getbbox(self):
         return [self.delay, self.delay+self.duration, min(self.freqs), max(self.freqs)]
+
+    def getTbox(self):
+        return [self.delay, self.delay+self.duration]
+
+    def getFbox(self):
+        return [min(self.freqs), max(self.freqs)]
 
     def print_content(self):
         print(self.TAG+\
@@ -517,7 +560,7 @@ class Chord(Node):
 
     TAG = "Chord"
 
-    def __init__(self, duration=1., delay=0., amps=None, env=None, **kwargs):
+    def __init__(self, duration=1., delay=0., amps=None, ramp=0.01, env=None, index=None, **kwargs):
         """
         Chord of pure tones constructor
         # Multiple ways of constructing the chord
@@ -527,15 +570,16 @@ class Chord(Node):
         # - from a base freq and intervals
         """
 
-        super(Chord, self).__init__(delay=delay)
+        super(Chord, self).__init__(delay=delay, index=index)
         self.duration = duration
         self.env = env
+        self.ramp = ramp
 
         # constructing from preexisting tone
         if 'chord' in kwargs:
             self.freqs = kwargs['chord'].freqs
             self.amps = kwargs['chord'].amps
-            self.List = kwargs['chord'].List
+            self.add(kwargs['chord'].List)
             self.duration = kwargs['chord'].duration
             self.env = kwargs['chord'].env
 
@@ -577,8 +621,9 @@ class Chord(Node):
                         delay=0.,
                         duration=self.duration,
                         amp=self.amps[i],
+                        ramp=self.ramp,
                         index=i)
-            self.List.append(tone)
+            self.add(tone)
 
     def shift_tones(self, shift=1.):
         """
@@ -651,7 +696,7 @@ class ConstantIntervalChord(Chord):
 
     TAG = "ConstantIntervalChord"
     
-    def __init__(self, fb=50., interval=2., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
+    def __init__(self, fb=50., interval=2., duration=1., delay=0., ramp=0.01, env=None,index=None, List=[], fmin=5, fmax=40000):
         """ConstantIntervalChord  constructor
 
         Args
@@ -672,8 +717,10 @@ class ConstantIntervalChord(Chord):
         super(ConstantIntervalChord, self).__init__(freqs=freqs,
                                                     delay=delay,
                                                   duration=duration,
+                                                  ramp=ramp,
                                                   List=List,
-                                                  env=env)
+                                                  env=env,
+                                                  index=index)
         self.fb = fb
         self.fmin = fmin
         self.fmax = fmax
@@ -686,7 +733,7 @@ class ShepardTone(ConstantIntervalChord):
 
     TAG = "ShepardTone"
 
-    def __init__(self, fb=50., duration=1., delay=0., env=None, List=[], fmin=5, fmax=40000):
+    def __init__(self, fb=50., duration=1., delay=0., ramp=0.01, env=None,index=None, List=[], fmin=5, fmax=40000):
         """Shepard Tone constructor
 
         Args:
@@ -699,6 +746,8 @@ class ShepardTone(ConstantIntervalChord):
                                           duration=duration,
                                           List=List,
                                           env=env,
+                                          ramp=ramp,
+                                          index=index,
                                           fmin=fmin,
                                           fmax=fmax)
 
@@ -714,7 +763,7 @@ class Tritone(Node):
 
     TAG = "Tritone"
 
-    def __init__(self, fb=50., duration_sp=1., delay_sp=0., delay=0., env=None, fmin=5, fmax=40000):
+    def __init__(self, fb=50., duration_sp=1., delay_sp=0., delay=0., ramp=0.01, env=None, fmin=5, fmax=40000):
         """TriTone constructor
 
         Args:
@@ -723,9 +772,9 @@ class Tritone(Node):
             delay_sp (float): delay between shepard tones in tritone
         """
         super(Tritone, self).__init__(delay=delay)
-        T1 = ShepardTone(fb=fb, duration=duration_sp, delay=0., env=env, fmin=fmin, fmax=fmax)
-        T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+delay_sp, env=env, fmin=fmin, fmax=fmax)
-        self.List = [T1, T2]
+        T1 = ShepardTone(fb=fb, duration=duration_sp, delay=0., ramp=ramp, env=env, fmin=fmin, fmax=fmax,index=0)
+        T2 = ShepardTone(fb=fb*np.sqrt(2.), duration=duration_sp, delay=duration_sp+delay_sp, ramp=ramp, env=env, fmin=fmin, fmax=fmax,index=1)
+        self.add([T1, T2])
         self.fb = fb
         self.duration_sp = duration_sp
         self.delay_sp = delay_sp
@@ -778,7 +827,7 @@ class ShepardRisset(Node):
             fi = interval**i*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
             instFreq = InstantaneousFrequency(phase=phase(fi), duration=min(duration_tone,duration), env=env)
-            self.List.append(instFreq)
+            self.add(instFreq)
 
         # added tones appearing as times goes on
         dt = np.abs(1./k*np.log(interval))
@@ -788,7 +837,7 @@ class ShepardRisset(Node):
             fi = interval**index[i_restart]*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
             instFreq = InstantaneousFrequency(phase=phase(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
-            self.List.append(instFreq)
+            self.add(instFreq)
 
 class ShepardFM(Node):
     """ShepardFM
@@ -832,7 +881,7 @@ class ShepardFM(Node):
         for i in index:
             fi = interval**i*self.fb
             instFreq = InstantaneousFrequency(i_freq=inst_freq(fi), duration=duration, env=env)
-            self.List.append(instFreq)
+            self.add(instFreq)
 
 class ToneSequence(Node):
     """Tone Sequence
@@ -844,6 +893,7 @@ class ToneSequence(Node):
     def __init__(self, intertone_delay=0.1,
                  tone_duration=0.5,
                  freqs=None,
+                 ramp=0.01,
                  List=[], delay=0., scale=1., env=None):
         """Constructor
 
@@ -855,6 +905,7 @@ class ToneSequence(Node):
         self.tone_duration=tone_duration
         self.freqs=freqs
         self.env=env
+        self.ramp=ramp
         assert isinstance(self.freqs, list)
         self.build_tones()
 
@@ -864,8 +915,8 @@ class ToneSequence(Node):
         index = 0
         for f in self.freqs:
             amp = self.env.amp(f) if self.env is not None else 1.
-            tone = Tone(freq=f, duration=self.tone_duration, delay=runTime, amp=amp, index=index)
-            self.List.append(tone)
+            tone = Tone(freq=f, duration=self.tone_duration, delay=runTime, amp=amp, ramp=self.ramp, index=index)
+            self.add(tone)
             runTime += self.tone_duration + self.intertone_delay
             index += 1
 
@@ -899,6 +950,7 @@ class UniformToneSequence(ToneSequence):
                  tone_duration=0.5,
                  band=[100,200],
                  n_tones=5,
+                 ramp=0.01,
                  List=[], delay=0., scale=1., env=None):
         """Constructor
 
@@ -914,6 +966,7 @@ class UniformToneSequence(ToneSequence):
                 intertone_delay=intertone_delay,
                  tone_duration=tone_duration,
                  freqs=freqs,
+                 ramp=ramp,
                  List=List, delay=delay, scale=scale, env=env)
         self.band=band
         self.freqs = freqs
