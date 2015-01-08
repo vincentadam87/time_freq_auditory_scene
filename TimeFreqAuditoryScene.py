@@ -129,7 +129,8 @@ class Node(object):
             if item.active is True:
                 xt = item.generate(fs)
                 i_start = int(item.delay*fs)
-                x[i_start:i_start+len(xt)] += xt*self.scale
+                m = min(len(xt)-1, len(x)-i_start-1)
+                x[i_start:i_start + m] += xt[0:m]*self.scale
         return x
 
     def draw(self, ax, prop_delay, prop_scale):

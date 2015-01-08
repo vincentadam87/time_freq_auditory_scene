@@ -37,6 +37,7 @@ class Context(Node):
         self.range_st = range_st
 
         assert fb_T1 is not None
+        assert self.bias in ['up','down']
         bias_sign = 1. if self.bias == 'up' else -1.
 
         assert type in ["chords", "streams"]
@@ -187,6 +188,7 @@ class Clearing(Node):
                     tone_duration=0.2,
                     inter_tone_interval=0.1,
                     env=None,
+                    ramp=0.01,
                     List = [], delay=0., scale=1.):
 
         super(Clearing, self).__init__(delay=delay, List=List, scale=scale)
@@ -195,11 +197,12 @@ class Clearing(Node):
         self.inter_tone_interval = inter_tone_interval
         self.env = env
 
+
         List = []
         runTime = 0
         for i in range(self.n_tones):
             fb = 2**np.random.rand()  # log-uniform over an octave
-            st = ConstantIntervalChord(fb=fb, interval=np.sqrt(2), duration=self.tone_duration, delay=runTime, env=self.env)
+            st = ConstantIntervalChord(fb=fb, interval=np.sqrt(2), duration=self.tone_duration, delay=runTime, env=self.env, ramp=ramp)
             List.append(st)
             runTime += self.tone_duration+self.inter_tone_interval
         self.add(List)
