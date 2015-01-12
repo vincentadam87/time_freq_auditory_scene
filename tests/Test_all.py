@@ -16,6 +16,7 @@ from Test_Leaf import Test_Leaf
 from Test_Shepard import Test_Shepard
 from Test_Chambers import Test_Chambers
 from Test_Nodes import Test_Nodes
+from Test_SceneDrawer import Test_SceneDrawer
 
 """
 Those tests only check input/output consistency
@@ -34,6 +35,7 @@ def suite():
     suite.addTest(Test_Shepard())
     suite.addTest(Test_Chambers())
     suite.addTest(Test_Nodes())
+    suite.addTest(Test_SceneDrawer())
 
     return suite
 

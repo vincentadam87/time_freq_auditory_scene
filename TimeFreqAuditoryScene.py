@@ -218,6 +218,12 @@ class Leaf(object):
         self.index = index
         self.parent = parent
 
+    def getstart(self):
+        """Start time relative to root"""
+        if self.parent is not None:
+            return self.parent.getstart()+self.delay
+        else:
+            return 0
 
     @abstractmethod
     def generate(self, fs):
@@ -973,7 +979,80 @@ class UniformToneSequence(ToneSequence):
         self.freqs = freqs
 
 
+# ----------------------
 
+# A grammar for plotting:
+# - line: {"line":[xmin,xmax,ymin,ymax]}
+# - function handle {"phase_handle":function, "type":"frequency/phase"}
+# - box: {"box":[xmin,xmax,ymin,ymax]}
+
+
+class SceneDrawer(object):
+
+    def __init__(self, ax, scene=None, f_axis="log"):
+        self.scene = scene
+        ax.set_yscale(f_axis)
+        ax.set_ylabel(f_axis=="log" and "log freq (Hz)" or "freq (Hz)")
+        ax.set_xlabel("time (s)")
+        ax.set_title("Spectrogram")
+        self.ax = ax
+
+    def draw(self, item):
+        if isinstance(item, Leaf):
+            self.drawLeaf()
+        elif isinstance(item, Node):
+            for sub_item in item:
+                self.draw(sub_item)
+
+    def drawLeaf(self, leaf):
+        """ Parsing the different plotOptions
+        """
+        plotOpts = leaf.makePlotOpts()
+        plotOpts = self.applyGlobalOpts(plotOpts)
+
+        for item in plotOpts:
+            self.drawCommand(item)
+
+    def applyGlobalOpts(self, plotOpts):
+        return plotOpts
+
+    def drawCommand(self, k):
+        """parsing the commands"""
+
+        if type(k) is list:
+            for item in k:
+                self.drawCommand(item)
+
+        if "line" in k:
+            v = k['line']
+            self.ax.plot([v[0], v[1]],[v[2],v[3]], lw=1, alpha=1, color='black')
+
+        if "box" in k:
+            v = k['box']
+            self.ax.plot([v[0], v[1]],[v[2],v[2]], lw=1,alpha=1, color='black')
+            self.ax.plot([v[0], v[1]],[v[3],v[3]], lw=1,alpha=1, color='black')
+            self.ax.plot([v[0], v[0]],[v[2],v[3]], lw=1,alpha=1, color='black')
+            self.ax.plot([v[1], v[1]],[v[2],v[3]], lw=1,alpha=1, color='black')
+
+        if "function" in k:
+            fs_plot = 2000.
+
+            v = k["function"]
+            s = v["start"]
+            d = v["duration"]
+            fn = v["handle"]
+
+            n = int(d*fs_plot)
+            t = np.linspace(s, s+d, n)  # time support
+
+            if v["type"] == "phase":
+                phase = fn(t)  # the time instantaneous phase
+                ift = np.diff(phase)*fs_plot  # the instantaneous frequency
+            elif v["type"] == "frequency":
+                ift = fn(t)
+                ift = ift[:-1]
+
+            self.ax.plot(t[:-1],ift, color='black')
 
 # ----------------------
 
