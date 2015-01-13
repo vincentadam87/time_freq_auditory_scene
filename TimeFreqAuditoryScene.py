@@ -1100,7 +1100,7 @@ class SceneDrawer(object):
                     ift = ift[:-1]
 
                 ax.plot(t[:-1],ift, color='black')
-+
+
 # ----------------------
 
 def g_env(x, mu_log, sigma_log):
