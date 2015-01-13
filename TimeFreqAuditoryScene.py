@@ -58,6 +58,13 @@ class Node(object):
         else:
             return 0
 
+    def getAbsScale(self):
+        """Scale relative to root"""
+        if self.parent is not None:
+            return self.parent.getAbsScale()*self.scale
+        else:
+            return 1
+
     def getTbox(self):
         start = self.getstart()
         return [start,start+self.getduration()]
@@ -170,28 +177,11 @@ class Scene(Node):
         """Constructor"""
         super(Scene, self).__init__(List=List)
 
-    def draw_spectrogram(self, f_axis="log"):
-        """
-        Returns a matplotlib figure containing drawn spectrogram
-
-        Args:
-            f_axis (string): type of plot ('log' or 'lin')
-
-        """
-        fig = plt.figure()
-        ax = fig.add_subplot(1,1,1)
-        for node in self.List:
-            if node.active is True:
-               node.draw(ax, prop_delay=0., prop_scale=1.)
-        ax.set_yscale(f_axis)
-        ax.set_ylabel(f_axis=="log" and "log freq (Hz)" or "freq (Hz)")
-        ax.set_xlabel("time (s)")
-        ax.set_title("Spectrogram")
-        return fig
-
     def flatten_scene(self):
         """
-        Clear all hierarchy in tone
+        Clear all hierarchy in terms of embedded lists
+        children remember who there parent is
+        parents have no memory of their children
         """
         self.List = [item for item in flatten(self.List)]
 
@@ -235,12 +225,20 @@ class Leaf(object):
     def getduration(self):
         return self.duration
 
+    def getAbsScale(self):
+        """Scale relative to root"""
+        if self.parent is not None:
+            return self.parent.getAbsScale()*self.amp
+        else:
+            return 1
+
     @abstractmethod
     def print_content(self):
         raise NotImplementedError()
 
     @abstractmethod
     def makePlotOpts(self):
+        """ Should always return a list of dictionaries """
         raise NotImplementedError()
 
     @abstractmethod
@@ -318,7 +316,10 @@ class Tone(Leaf):
     def makePlotOpts(self):
         s = self.getstart()
         d = self.getduration()
-        return {"line":[s, s+d, self.freq, self.freq]}
+        return [{"line":
+                     {"tf":[s, s+d, self.freq, self.freq],
+                      "a":self.getAbsScale()}
+                }]
 
 class SAMTone(Tone):
     """Sinusoid Amplitude Modulated Tone
@@ -436,9 +437,10 @@ class Sweep(Leaf):
                 color='black')
 
     def makePlotOpts(self):
-        s = self.getstart()
-        d = self.getduration()
-        return {"line":[s, s+d, self.freqs[0], self.freqs[1]]}
+        #s = self.getstart()
+        #d = self.getduration()
+        #return [{"line":[s, s+d, self.freqs[0], self.freqs[1]]}]
+        return []
 
 class InstantaneousFrequency(Leaf):
     """Instantaneous frequency Leaf
@@ -518,11 +520,11 @@ class InstantaneousFrequency(Leaf):
     def makePlotOpts(self):
         s = self.getstart()
         d = self.getduration()
-        return {"function":{
+        return [{"function":{
             "start":self.getstart(),
             "duration":self.getduration(),
             "handle": self.phase if self.phase is not None else "frequency",
-            "type": "phase" if self.phase is not None else self.i_freq}}
+            "type": "phase" if self.phase is not None else self.i_freq}}]
 
 class SpectralEnvelope(object):
     """Abstract Spectral envelope"""
@@ -719,7 +721,7 @@ class WhiteNoise(Leaf):
     def makePlotOpts(self):
         s = self.getstart()
         d = self.getduration()
-        return {"box":[s, s+d, 0, float("inf")]}
+        return [{"box":[s, s+d, 0, float("inf")]}]
 
 class ConstantIntervalChord(Chord):
     """
@@ -1007,82 +1009,98 @@ class UniformToneSequence(ToneSequence):
         self.band=band
         self.freqs = freqs
 
-
 # ----------------------
-
-# A grammar for plotting:
-# - line: {"line":[xmin,xmax,ymin,ymax]}
-# - function handle {"phase_handle":function, "type":"frequency/phase"}
-# - box: {"box":[xmin,xmax,ymin,ymax]}
-
 
 class SceneDrawer(object):
 
-    def __init__(self, ax, scene=None, f_axis="log"):
-        self.scene = scene
-        ax.set_yscale(f_axis)
-        ax.set_ylabel(f_axis=="log" and "log freq (Hz)" or "freq (Hz)")
-        ax.set_xlabel("time (s)")
-        ax.set_title("Spectrogram")
-        self.ax = ax
+    def __init__(self, f_axis="log", map=None):
+        self.f_axis = f_axis
+        if map is None:
+            self.map = lambda x:sig((x-0.2))
 
-    def draw(self, item):
+    def draw(self, item, ax=None):
+
+        if ax is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(1,1,1)
+            ax.set_yscale(self.f_axis)
+            ax.set_ylabel(self.f_axis=="log" and "log freq (Hz)" or "freq (Hz)")
+            ax.set_xlabel("time (s)")
+            ax.set_title("Spectrogram")
+
+        """ Draw spectrogram for item in tree (recursive) """
         if isinstance(item, Leaf):
-            self.drawLeaf()
+            if item.active is True:
+                self.drawLeaf(item, ax)
         elif isinstance(item, Node):
-            for sub_item in item:
-                self.draw(sub_item)
+            if item.active is True:
+                for sub_item in item.List:
+                    self.draw(sub_item, ax=ax)
 
-    def drawLeaf(self, leaf):
-        """ Parsing the different plotOptions
-        """
+    def makePlotOpts(self, item):
+        """ Make plot instructions from node item (recursive) """
+        if isinstance(item, Node):
+            plotOpts = []
+            for sub_item in item.List:
+                plotOpts += self.makePlotOpts(sub_item)
+            return plotOpts
+        if isinstance(item, Leaf):
+            return item.makePlotOpts()
+
+    def drawLeaf(self, leaf, ax):
+        """ Parsing the different plotOptions for a leaf"""
         plotOpts = leaf.makePlotOpts()
         plotOpts = self.applyGlobalOpts(plotOpts)
-
         for item in plotOpts:
-            self.drawCommand(item)
+            self.drawCommand(item, ax)
 
     def applyGlobalOpts(self, plotOpts):
+        """ if global options, add them"""
         return plotOpts
 
-    def drawCommand(self, k):
-        """parsing the commands"""
+    def drawCommand(self, k, ax):
+        """parsing the drawing commands"""
 
         if type(k) is list:
             for item in k:
-                self.drawCommand(item)
+                self.drawCommand(item, ax)
 
-        if "line" in k:
-            v = k['line']
-            self.ax.plot([v[0], v[1]],[v[2],v[3]], lw=1, alpha=1, color='black')
+        elif type(k) is dict:
 
-        if "box" in k:
-            v = k['box']
-            self.ax.plot([v[0], v[1]],[v[2],v[2]], lw=1,alpha=1, color='black')
-            self.ax.plot([v[0], v[1]],[v[3],v[3]], lw=1,alpha=1, color='black')
-            self.ax.plot([v[0], v[0]],[v[2],v[3]], lw=1,alpha=1, color='black')
-            self.ax.plot([v[1], v[1]],[v[2],v[3]], lw=1,alpha=1, color='black')
+            if "line" in k:
+                # iso amplitude line
+                v = k["line"]
+                tf = v["tf"]
+                a = v["a"]
+                ax.plot([tf[0], tf[1]],[tf[2],tf[3]], lw=map(a)+1, alpha=self.map(a), color='black')
 
-        if "function" in k:
-            fs_plot = 2000.
+            if "box" in k:
+                v = k["box"]
+                ax.plot([v[0], v[1]],[v[2],v[2]], lw=1,alpha=1, color='black')
+                ax.plot([v[0], v[1]],[v[3],v[3]], lw=1,alpha=1, color='black')
+                ax.plot([v[0], v[0]],[v[2],v[3]], lw=1,alpha=1, color='black')
+                ax.plot([v[1], v[1]],[v[2],v[3]], lw=1,alpha=1, color='black')
 
-            v = k["function"]
-            s = v["start"]
-            d = v["duration"]
-            fn = v["handle"]
+            if "function" in k:
+                fs_plot = 2000.
 
-            n = int(d*fs_plot)
-            t = np.linspace(s, s+d, n)  # time support
+                v = k["function"]
+                s = v["start"]
+                d = v["duration"]
+                fn = v["handle"]
 
-            if v["type"] == "phase":
-                phase = fn(t)  # the time instantaneous phase
-                ift = np.diff(phase)*fs_plot  # the instantaneous frequency
-            elif v["type"] == "frequency":
-                ift = fn(t)
-                ift = ift[:-1]
+                n = int(d*fs_plot)
+                t = np.linspace(s, s+d, n)  # time support
 
-            self.ax.plot(t[:-1],ift, color='black')
+                if v["type"] == "phase":
+                    phase = fn(t)  # the time instantaneous phase
+                    ift = np.diff(phase)*fs_plot  # the instantaneous frequency
+                elif v["type"] == "frequency":
+                    ift = fn(t)
+                    ift = ift[:-1]
 
+                ax.plot(t[:-1],ift, color='black')
++
 # ----------------------
 
 def g_env(x, mu_log, sigma_log):
@@ -1095,24 +1113,12 @@ def g_env(x, mu_log, sigma_log):
     """
     return np.exp(-(np.log(x)-mu_log)**2/sigma_log**2)
 
-# def playsound(x, fs=44100.):
-#     """
-#     Playing sound x
-#     :param x:
-#     :return:
-#     """
-#     scaled = np.int16(x/np.max(np.abs(x)) * 32767)
-#     wavPath = 'tmp.wav'
-#     if os.path.isfile(wavPath):
-#         os.remove(wavPath)
-#     write(wavPath, fs, scaled)
-#     s4p = S4P.Sound4Python()
-#     s4p.loadWav(wavPath)
-#     s4p.play()
-
 def sig(x):
     """Standard sigmoid function"""
     return 1./(1+np.exp(-x))
+
+def map(x):
+    return sig((x-0.2))
 
 def flatten(l):
     for el in l:

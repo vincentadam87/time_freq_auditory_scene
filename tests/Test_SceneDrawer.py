@@ -22,17 +22,12 @@ class Test_SceneDrawer(unittest.TestCase):
     def test_all(self):
         self.logPoint()
 
-        fig = plt.figure()
-        ax = fig.add_subplot(1,1,1)
-        sd = SceneDrawer(ax)
+        sd = SceneDrawer()
 
-        c = [{"line":[0,2,100,300]},
-             {"box":[0,1,100,200]},
-             {"function":{"handle":lambda x:100*x**2, "type":"frequency",
-                         "start":0.7,
-                         "duration":1}}]
-        sd.drawCommand(c)
-        plt.show()
+        genv = GaussianSpectralEnvelope(mu=960.,sigma_oct=1.)
+        sp = ShepardTone(env=genv)
+
+        sd.draw(sp)
 
     def logPoint(self):
         currentTest = self.id().split('.')[-1]
