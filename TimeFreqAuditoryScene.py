@@ -170,7 +170,6 @@ class Scene(Node):
         """Constructor"""
         super(Scene, self).__init__(List=List)
 
-
     def draw_spectrogram(self, f_axis="log"):
         """
         Returns a matplotlib figure containing drawn spectrogram
@@ -241,6 +240,10 @@ class Leaf(object):
         raise NotImplementedError()
 
     @abstractmethod
+    def makePlotOpts(self):
+        raise NotImplementedError()
+
+    @abstractmethod
     def draw(self, ax, prop_delay, prop_scale):
         raise NotImplementedError()
 
@@ -269,7 +272,9 @@ class Tone(Leaf):
             self.phase = np.random.rand()*np.pi*2.
 
     def generate(self, fs):
-        t = np.linspace(0., self.duration, int(self.duration*fs))
+        s = self.getstart()
+        d = self.getduration()
+        t = np.linspace(s, s+d, int(d*fs))
         if self.freq<fs/2:  # anti-alias safety
             y = np.cos(2.*np.pi*self.freq*t + self.phase)
         else:
@@ -309,6 +314,11 @@ class Tone(Leaf):
                 lw=map_abs_amp*4.,
                 alpha=map_abs_amp,
                 color='black')
+
+    def makePlotOpts(self):
+        s = self.getstart()
+        d = self.getduration()
+        return {"line":[s, s+d, self.freq, self.freq]}
 
 class SAMTone(Tone):
     """Sinusoid Amplitude Modulated Tone
@@ -383,9 +393,10 @@ class Sweep(Leaf):
         self.freqs = freqs
 
     def generate(self, fs):
-        n = int(self.duration*fs)
-        t = np.linspace(0., self.duration, n )
-        f = np.linspace(self.freqs[0], self.freqs[1], n)
+        s = self.getstart()
+        d = self.getduration()
+        t = np.linspace(s, s+d, int(d*fs))
+        f = np.linspace(self.freqs[0], self.freqs[1], len(t))
         y = np.cos(2.*np.pi*f*t)
         # apply border smoothing in the form of a raising squared cosine amplitude modulation
         tau = 0.02  # 10ms
@@ -424,6 +435,11 @@ class Sweep(Leaf):
                 alpha=map_abs_amp,
                 color='black')
 
+    def makePlotOpts(self):
+        s = self.getstart()
+        d = self.getduration()
+        return {"line":[s, s+d, self.freqs[0], self.freqs[1]]}
+
 class InstantaneousFrequency(Leaf):
     """Instantaneous frequency Leaf
     Sound cos(f(t))
@@ -448,10 +464,10 @@ class InstantaneousFrequency(Leaf):
         self.env = env
 
 
-
     def generate(self, fs):
-        n = int(self.duration*fs)
-        t = np.linspace(0., self.duration, n )  # time support
+        s = self.getstart()
+        d = self.getduration()
+        t = np.linspace(s, s+d, int(d*fs))
         if self.phase is not None:
             phase = self.phase(t)  # the time instantaneous phase
             ift = np.diff(phase)  # the instantaneous frequency
@@ -498,6 +514,15 @@ class InstantaneousFrequency(Leaf):
 
         ax.plot(prop_delay+self.delay+t[:-1],ift,
                 color='black')
+
+    def makePlotOpts(self):
+        s = self.getstart()
+        d = self.getduration()
+        return {"function":{
+            "start":self.getstart(),
+            "duration":self.getduration(),
+            "handle": self.phase if self.phase is not None else "frequency",
+            "type": "phase" if self.phase is not None else self.i_freq}}
 
 class SpectralEnvelope(object):
     """Abstract Spectral envelope"""
@@ -691,6 +716,11 @@ class WhiteNoise(Leaf):
         ax.plot([prop_delay+self.delay, prop_delay+self.delay+ self.duration],
                 [1000, 1000],color='red')
 
+    def makePlotOpts(self):
+        s = self.getstart()
+        d = self.getduration()
+        return {"box":[s, s+d, 0, float("inf")]}
+
 class ConstantIntervalChord(Chord):
     """
     ConstantIntervalChord
@@ -872,7 +902,6 @@ class ShepardFM(Node):
         self.amod = amod
         self.fmod = fmod
         self.fb = fb
-
 
         fmin = 5.
         fmax = 40000.

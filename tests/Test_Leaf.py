@@ -40,7 +40,8 @@ class Test_Leaf(unittest.TestCase):
             x = leaf.generate(self.fs)
             self.assertIsInstance(x, np.ndarray)
             self.assertTrue(x.ndim == 1)
-
+            opts = leaf.makePlotOpts()
+            print opts
 
     def logPoint(self):
         currentTest = self.id().split('.')[-1]
