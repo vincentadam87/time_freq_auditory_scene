@@ -34,7 +34,7 @@ class Context(Node):
         self.fb_T1 = fb_T1
         self.bias = bias
         self.type = type
-        self.range_st = range_st
+        self.range_st = range_st if n_tones>0 else [0,0]
 
         assert fb_T1 is not None
         assert self.bias in ['up','down']
@@ -97,6 +97,7 @@ class RandomDropOutContext(Context):
                     fb_T1=None,
                     type="chords",  # chords
                     bias='up',
+                    range_st=[0,6],
                     List=[], delay=0., scale=1.):
 
         super(RandomDropOutContext, self).__init__(n_tones=n_tones,
@@ -106,11 +107,13 @@ class RandomDropOutContext(Context):
                     fb_T1=fb_T1,
                     type=type,  # chords or streams
                     bias=bias,
+                    range_st=range_st,
                     delay=delay, List=List, scale=scale)
 
         self.n_drop = n_drop
 
         # for each shepard tone
+        drop = []
         for i in range(self.n_tones):
             st = self.List[i]
             amps = [t.amp for t in st.List]
@@ -119,10 +122,12 @@ class RandomDropOutContext(Context):
             for d in range(self.n_drop):
                 amps /= sum(amps)
                 i_drop = sample_discrete(amps,1)
-                i_drops.append(i_drop)
+                i_drops.append(int(i_drop))
                 amps[i_drop] = 0
                 st.List[i_drop].active = False
+            drop.append(i_drops)
 
+        self.drop = drop
 
 class StructuredDropOutContext(Context):
     """
