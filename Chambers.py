@@ -27,7 +27,6 @@ class Context(Node):
 
         super(Context, self).__init__(delay=delay, List=List, scale=scale)
 
-        self.n_tones = n_tones
         self.tone_duration = tone_duration
         self.inter_tone_interval = inter_tone_interval
         self.env = env
@@ -35,6 +34,7 @@ class Context(Node):
         self.bias = bias
         self.type = type
         self.range_st = range_st if n_tones>0 else [0,0]
+        self.n_tones = n_tones if n_tones>0 else 1
 
         assert fb_T1 is not None
         assert self.bias in ['up','down']
@@ -76,7 +76,7 @@ class Context(Node):
                 List.append(ts)
 
         self.add(List)
-        self.fbs = 2**np.array(indices)*fb_T1
+        self.fbs = shifts*fb_T1
 
 
 
@@ -149,6 +149,7 @@ class StructuredDropOutContext(Context):
                     fb_T1=None,
                     type="streams",  # streams
                     bias='up',
+                    range_st=[0,6],
                     List=[], delay=0., scale=1.):
 
         super(StructuredDropOutContext, self).__init__(n_tones=n_tones,
@@ -158,6 +159,7 @@ class StructuredDropOutContext(Context):
                     fb_T1=fb_T1,
                     type=type,  # chords or streams
                     bias=bias,
+                    range_st=range_st,
                     delay=delay, List=List, scale=scale)
         self.n_drop = n_drop
 
@@ -175,10 +177,14 @@ class StructuredDropOutContext(Context):
             amps[i_max[j]] = 0
 
         # Drop
+        drop = []
         for i in i_max:
             for t in range(n_tones):
                 if ((t+i) % 2) == 0:
                     self.List[i].List[t].active = False
+                    drop.append([i,t])
+
+        self.drop = drop
 
 
 class Clearing(Node):
