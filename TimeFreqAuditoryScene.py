@@ -764,6 +764,38 @@ class ConstantIntervalChord(Chord):
         self.fmin = fmin
         self.fmax = fmax
 
+class HarmonicComplexTone(Chord):
+    """Harmonic Complex Tone"""
+
+    TAG = "HarmonicComplexTone"
+
+    def __init__(self, f0=100, harmonics=None, duration=1., delay=0., ramp=0.01, env=None, index=None, List=[], fmin=5, fmax=40000 ):
+
+        imax = int(fmax/f0)
+
+        if harmonics is None:
+            harmonics = range(1, imax)
+        elif isinstance(harmonics, list):
+            harmonics = [h for h in harmonics if h<imax]
+
+        freqs = []
+        for i in harmonics:
+            freqs.append(i*f0)
+
+        super(HarmonicComplexTone, self).__init__(freqs=freqs,
+                                                    delay=delay,
+                                                  duration=duration,
+                                                  ramp=ramp,
+                                                  List=List,
+                                                  env=env,
+                                                  index=index)
+        self.f0 = f0
+        self.harmonics = harmonics
+        self.fmin = fmin
+        self.fmax = fmax
+
+
+
 class ShepardTone(ConstantIntervalChord):
     """Shepard Tone
 
@@ -1072,7 +1104,7 @@ class SceneDrawer(object):
                 v = k["line"]
                 tf = v["tf"]
                 a = v["a"]
-                ax.plot([tf[0], tf[1]],[tf[2],tf[3]], lw=map(a)+1, alpha=self.map(a), color='black')
+                ax.plot([tf[0], tf[1]],[tf[2],tf[3]], lw=1+map(a), alpha=1.0, color=str(1.-a))
 
             if "box" in k:
                 v = k["box"]
@@ -1118,7 +1150,7 @@ def sig(x):
     return 1./(1+np.exp(-x))
 
 def map(x):
-    return sig((x-0.2))
+    return sig(10*(x-0.2))
 
 def flatten(l):
     for el in l:
