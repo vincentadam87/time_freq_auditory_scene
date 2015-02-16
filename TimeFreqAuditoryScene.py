@@ -437,10 +437,12 @@ class Sweep(Leaf):
                 color='black')
 
     def makePlotOpts(self):
-        #s = self.getstart()
-        #d = self.getduration()
-        #return [{"line":[s, s+d, self.freqs[0], self.freqs[1]]}]
-        return []
+        s = self.getstart()
+        d = self.getduration()
+        return [{"line":
+                     {"tf":[s, s+d, self.freqs[0], self.freqs[1]],
+                      "a":self.getAbsScale()}
+                }]
 
 class InstantaneousFrequency(Leaf):
     """Instantaneous frequency Leaf
@@ -469,7 +471,7 @@ class InstantaneousFrequency(Leaf):
     def generate(self, fs):
         s = self.getstart()
         d = self.getduration()
-        t = np.linspace(s, s+d, int(d*fs))
+        t = np.linspace(s, s+d, int(d*fs))-self.delay
         if self.phase is not None:
             phase = self.phase(t)  # the time instantaneous phase
             ift = np.diff(phase)  # the instantaneous frequency
@@ -522,9 +524,10 @@ class InstantaneousFrequency(Leaf):
         d = self.getduration()
         return [{"function":{
             "start":self.getstart(),
+            "delay":self.delay,
             "duration":self.getduration(),
-            "handle": self.phase if self.phase is not None else "frequency",
-            "type": "phase" if self.phase is not None else self.i_freq}}]
+            "handle": self.phase if self.phase is not None else self.i_freq,
+            "type": "phase" if self.phase is not None else "frequency"}}]
 
 class SpectralEnvelope(object):
     """Abstract Spectral envelope"""
@@ -897,7 +900,9 @@ class ShepardRisset(Node):
         for i in index:
             fi = interval**i*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
-            instFreq = InstantaneousFrequency(phase=phase(fi), duration=min(duration_tone,duration), env=env)
+            instFreq = InstantaneousFrequency(phase=phase(fi),
+                                              duration=min(duration_tone,duration),
+                                              env=env)
             self.add(instFreq)
 
         # added tones appearing as times goes on
@@ -907,7 +912,10 @@ class ShepardRisset(Node):
         for time in times:
             fi = interval**index[i_restart]*self.fb
             duration_tone = np.abs(1./k*np.log(f_thresh/fi))
-            instFreq = InstantaneousFrequency(phase=phase(fi),delay=time, duration=min(duration-time,duration_tone), env=env)
+            instFreq = InstantaneousFrequency(phase=phase(fi),
+                                              delay=time,
+                                              duration=min(duration-time,duration_tone),
+                                              env=env)
             self.add(instFreq)
 
 class ShepardFM(Node):
@@ -1120,15 +1128,17 @@ class SceneDrawer(object):
                 s = v["start"]
                 d = v["duration"]
                 fn = v["handle"]
-
+                de = v["delay"]
                 n = int(d*fs_plot)
                 t = np.linspace(s, s+d, n)  # time support
 
+
+                assert v["type"] in ["phase","frequency"]
                 if v["type"] == "phase":
-                    phase = fn(t)  # the time instantaneous phase
+                    phase = fn(t-de)  # the time instantaneous phase
                     ift = np.diff(phase)*fs_plot  # the instantaneous frequency
                 elif v["type"] == "frequency":
-                    ift = fn(t)
+                    ift = fn(t-de)
                     ift = ift[:-1]
 
                 ax.plot(t[:-1],ift, color='black')
