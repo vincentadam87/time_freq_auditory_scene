@@ -23,7 +23,6 @@ class Test_SceneDrawer(unittest.TestCase):
         self.logPoint()
 
         sd = SceneDrawer()
-
         genv = GaussianSpectralEnvelope(mu=960.,sigma_oct=1.)
         sp = ShepardTone(env=genv)
 

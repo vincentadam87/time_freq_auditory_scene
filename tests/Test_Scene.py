@@ -26,7 +26,7 @@ class Test_Scene(unittest.TestCase):
             Tone(freq=100., duration=0.1, delay=1.)
             ]
         scene = Scene()
-        scene.List = leaves
+        scene.add(leaves)
         x = scene.generate(self.fs)
         self.assertIsInstance(x, np.ndarray)
         self.assertTrue(x.ndim == 1)
