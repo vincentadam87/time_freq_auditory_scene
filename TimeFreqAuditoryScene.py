@@ -1058,7 +1058,7 @@ class SceneDrawer(object):
         if map is None:
             self.map = lambda x:sig((x-0.2))
 
-    def draw(self, item, ax=None):
+    def draw(self, item, ax=None, ylim=None):
 
         if ax is None:
             fig = plt.figure()
@@ -1076,6 +1076,10 @@ class SceneDrawer(object):
             if item.active is True:
                 for sub_item in item.List:
                     self.draw(sub_item, ax=ax)
+
+        if ylim is not None:
+            ax.set_ylim(ylim)
+
 
     def makePlotOpts(self, item):
         """ Make plot instructions from node item (recursive) """
