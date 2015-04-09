@@ -19,6 +19,7 @@ class Context(Node):
                     inter_tone_interval=0.1,
                     env=None,
                     fb_T1=None,
+                    interval=2.,
                     type="chords",  # chords or streams
                     bias='up',
                     range_st=[0,6],
@@ -29,6 +30,7 @@ class Context(Node):
 
         self.tone_duration = tone_duration
         self.inter_tone_interval = inter_tone_interval
+        self.interval = interval
         self.env = env
         self.fb_T1 = fb_T1
         self.bias = bias
@@ -42,19 +44,20 @@ class Context(Node):
 
         assert type in ["chords", "streams"]
         List = []
-        shifts = 2.**(bias_sign* (self.range_st[0] + np.random.rand(self.n_tones,)*(self.range_st[1]-self.range_st[0]))/12. )
+        shifts = self.interval**(bias_sign* (self.range_st[0] + np.random.rand(self.n_tones,)*(self.range_st[1]-self.range_st[0]))/12. )
         fmin = 10.
         fmax = 44000.
-        imin = int(1./np.log(2)*np.log(fmin/fb_T1))
-        imax = int(1./np.log(2)*np.log(fmax/fb_T1))
+        imin = int(1./np.log(self.interval)*np.log(fmin/fb_T1))
+        imax = int(1./np.log(self.interval)*np.log(fmax/fb_T1))
         indices = np.arange(imin, imax)
 
         # Construction as a (horizontal) sequence of consecutive Shepard Tones (chords)
         if type == "chords":
             runTime = 0
             for i in range(self.n_tones):
-                st = ShepardTone(fb=shifts[i]*fb_T1,
+                st = ConstantIntervalChord(fb=shifts[i]*fb_T1,
                                  duration=self.tone_duration,
+                                 interval=self.interval,
                                  delay=runTime,
                                  ramp=ramp,
                                  env=self.env,
@@ -67,7 +70,7 @@ class Context(Node):
         elif type == "streams":
 
             for i in indices:
-                fb = 2**i*fb_T1
+                fb = self.interval**i*fb_T1
                 ts = ToneSequence(intertone_delay=inter_tone_interval,
                             tone_duration=tone_duration,
                             freqs=[shift*fb for shift in shifts],
