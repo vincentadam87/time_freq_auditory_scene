@@ -1060,6 +1060,7 @@ class SceneDrawer(object):
 
     def draw(self, item, ax=None, ylim=None):
 
+        fig = None
         if ax is None:
             fig = plt.figure()
             ax = fig.add_subplot(1,1,1)
@@ -1080,6 +1081,7 @@ class SceneDrawer(object):
         if ylim is not None:
             ax.set_ylim(ylim)
 
+        return fig
 
     def makePlotOpts(self, item):
         """ Make plot instructions from node item (recursive) """
